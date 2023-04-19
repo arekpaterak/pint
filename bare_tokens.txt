@@ -1,18 +1,29 @@
-identifier = 'letter' {'letter' | 'digit'}*
-integer = '\d+'
-float = '\d+.\d+'
-boolean = 'true|false'
-string = '"[^"]*"'
-binary_operator = '[+-*/%]|==|!=|<|>|<=|>=|and|or'
-unary_operator = '[+-]|not'
-indentation = '[ \t]+'
-newline = '\n'
-semicolon = ';'
-comma = ','
-left_paren = '('
-right_paren = ')'
-left_brace = '{'
-right_brace = '}'
-equals = '='
-keyword = '<function>|<class>|<inherits>|<constructor>|<leaf>|<tree>|<fallen_leaf>|<for>|<while>|<try>|<except>|<finally>|<raise>|<continue>|<break>'
-compound_identifier = identifier {'.' identifier}+
+IDENTIFIER = letter , {letter | digit | '_'}
+COMPOUND_IDENTIFIER = IDENTIFIER , {'.' , IDENTIFIER}
+
+INTEGER = ['-'] , digit , {digit}
+FLOAT = ['-'] , digit , {digit} , '.' , digit , {digit}
+
+BOOLEAN = '<true>' | '<false>'
+
+STRING = '<string_start> {character} <string_end>'
+
+BINARY_OPERATOR = '+' | '-' | '*' | '/' | '%' | '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' 
+
+NOT = '<not>'
+
+UNARY_OPERATOR = <increment> | <decrement>
+
+SEMICOLON = ';'
+COMMA = ','
+
+LEFT_PARENTHESES = '('
+RIGHT_PARENTHESES = ')'
+LEFT_BRACE = '{'
+RIGHT_BRACE = '}'
+LEFT_SQUARE_BRACKET = '['
+RIGHT_SQUARE_BRACKET = ']'
+
+ASSIGNMENT = '<assignment>'
+
+KEYWORD = '<function>' | '<class>' | '<inherits>' | '<constructor>' | '<leaf>' | '<tree>' | '<fallen_leaf>' | '<for>' | '<while>' | '<try>' | '<except>' | '<finally>' | '<raise>' | '<continue>' | '<break>'

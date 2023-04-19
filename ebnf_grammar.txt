@@ -6,7 +6,7 @@ program = { definition | statement };
 
 statement = assignment_statement | call_statement | if_statement | for_statement | while_statement | try_statement | raise_statement | continue_statement | break_statement;
 
-assignment_statement = IDENTIFIER , "=" , expression , ";";
+assignment_statement = IDENTIFIER , "<assignment>" , expression , ";";
 
 call_statement = call , ";";
 
@@ -16,7 +16,7 @@ definition = class_definition | function_definition | variable_definition;
 
 -- variable
 
-variable_definition = type , IDENTIFIER , "=" , expression , ";";
+variable_definition = type , IDENTIFIER , "<assignment>" , expression , ";";
 
 -- function
 
@@ -24,7 +24,7 @@ function_definition = "<function>" , IDENTIFIER , "(", [ parameters ] , ")" , "-
 
 parameters = parameter , { "," , parameter };
 
-parameter = type , IDENTIFIER , [ "=" , expression ];
+parameter = type , IDENTIFIER , [ "<assignment>" , expression ];
 
 -- class
 

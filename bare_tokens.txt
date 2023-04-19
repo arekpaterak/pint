@@ -1,3 +1,5 @@
+-- compund tokens
+
 IDENTIFIER = letter , {letter | digit | '_'}
 COMPOUND_IDENTIFIER = IDENTIFIER , {'.' , IDENTIFIER}
 
@@ -8,11 +10,13 @@ BOOLEAN = '<true>' | '<false>'
 
 STRING = '<string_start> , {character} , <string_end>'
 
-BINARY_OPERATOR = '+' | '-' | '*' | '/' | '%' | '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' 
+UNARY_OPERATOR = <increment> | <decrement>
+
+-- simple tokens
 
 NOT = '<not>'
 
-UNARY_OPERATOR = <increment> | <decrement>
+BINARY_OPERATOR = '+' | '-' | '*' | '/' | '%' | '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' 
 
 SEMICOLON = ';'
 COMMA = ','
@@ -24,6 +28,6 @@ RIGHT_BRACE = '}'
 LEFT_SQUARE_BRACKET = '['
 RIGHT_SQUARE_BRACKET = ']'
 
-ASSIGNMENT = '<assignment>'
+'<assignment>'
 
-KEYWORD = '<function>' | '<class>' | '<inherits>' | '<constructor>' | '<leaf>' | '<tree>' | '<fallen_leaf>' | '<for>' | '<while>' | '<try>' | '<except>' | '<finally>' | '<raise>' | '<continue>' | '<break>'
+'<function>' | '<class>' | '<inherits>' | '<constructor>' | '<leaf>' | '<tree>' | '<fallen_leaf>' | '<for>' | '<while>' | '<try>' | '<except>' | '<finally>' | '<raise>' | '<continue>' | '<break>'

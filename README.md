@@ -1,2 +1,2 @@
 # Pint 🍺
-A programming language brewed 🍺 with love ❤ and best emojis 😀.
+A programming language brewed 🍺 with love ❤ and the best emojis 😀

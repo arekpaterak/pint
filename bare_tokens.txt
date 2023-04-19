@@ -6,7 +6,7 @@ FLOAT = ['-'] , digit , {digit} , '.' , digit , {digit}
 
 BOOLEAN = '<true>' | '<false>'
 
-STRING = '<string_start> {character} <string_end>'
+STRING = '<string_start> , {character} , <string_end>'
 
 BINARY_OPERATOR = '+' | '-' | '*' | '/' | '%' | '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' 
 

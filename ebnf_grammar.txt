@@ -6,7 +6,7 @@ program = { definition | statement };
 
 statement = assignment_statement | call_statement | if_statement | for_statement | while_statement | try_statement | raise_statement | continue_statement | break_statement;
 
-assignment_statement = INDENTIFIER , "=" , expression , ";";
+assignment_statement = IDENTIFIER , "=" , expression , ";";
 
 call_statement = call , ";";
 
@@ -16,33 +16,33 @@ definition = class_definition | function_definition | variable_definition;
 
 -- variable
 
-variable_definition = type , INDENTIFIER , "=" , expression , ";";
+variable_definition = type , IDENTIFIER , "=" , expression , ";";
 
 -- function
 
-function_definition = "<function>" , INDENTIFIER , "(", [ parameters ] , ")" , "->" , type , "{" , { statement } , "}";
+function_definition = "<function>" , IDENTIFIER , "(", [ parameters ] , ")" , "->" , type , "{" , { statement } , "}";
 
 parameters = parameter , { "," , parameter };
 
-parameter = type , INDENTIFIER , [ "=" , expression ];
+parameter = type , IDENTIFIER , [ "=" , expression ];
 
 -- class
 
-class_definition = "<class>" , INDENTIFIER , "<inherits>" , INDENTIFIER , "{" , { class_body } , "}";
+class_definition = "<class>" , IDENTIFIER , "<inherits>" , IDENTIFIER , "{" , { class_body } , "}";
 
 class_body = { field_declaration } ,
              [ constructor_definition ] ,
              { method_definition };
 
-field_declaration = type , INDENTIFIER , ";";
+field_declaration = type , IDENTIFIER , ";";
 
-constructor_definition = "<constructor>" , INDENTIFIER , "(", [ parameters ] , ")" , "{" , { statement } , "}";
+constructor_definition = "<constructor>" , IDENTIFIER , "(", [ parameters ] , ")" , "{" , { statement } , "}";
 
 method_definition = function_definition;
 
 -- expression
 
-expression = ("(", expression, ")") | binary_expression | unary_expression | call_expression | literal_expression | INDENTIFIER_expression;
+expression = ("(", expression, ")") | binary_expression | unary_expression | call_expression | literal_expression | IDENTIFIER_expression;
 
 binary_expression = expression , binary_operator , expression;
 binary_operator = "+" | "-" | "*" | "/" | "%" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "and" | "or";
@@ -60,11 +60,11 @@ literal_expression = INTEGER | FLOAT | BOOLEAN | STRING;
 
 -- types and identifiers
 
-identifier_expression = INDENTIFIER;
+identifier_expression = IDENTIFIER;
 
-type = "int" | "float" | "bool" | "string" | INDENTIFIER;
+type = "int" | "float" | "bool" | "string" | IDENTIFIER;
 
-compound_identifier = { INDENTIFIER , "." } , INDENTIFIER ;
+compound_identifier = { IDENTIFIER , "." } , IDENTIFIER ;
 
 -- if
 
@@ -76,15 +76,15 @@ compound_if_statement = "<tree>" , "{" , simple_if_statement , { simple_if_state
 
 -- loops
 
-for_statement = "<for>" , type, INDENTIFIER , "in" , ( compound_identifier | call ) , "{" , { statement } , "}";
+for_statement = "<for>" , type, IDENTIFIER , "in" , ( compound_identifier | call ) , "{" , { statement } , "}";
 
 while_statement = "<while>" , expression , "{" , { statement } , "}";
 
 -- exceptions
 
-try_statement = "<try>" , "{" , { statement } , "}" , "<except>" , INDENTIFIER , "{" , { statement } , "}" , [ "<finally>" , "{" , { statement } , "}" ];
+try_statement = "<try>" , "{" , { statement } , "}" , "<except>" , IDENTIFIER , "{" , { statement } , "}" , [ "<finally>" , "{" , { statement } , "}" ];
 
-raise_statement = "<raise>" , INDENTIFIER , ";";
+raise_statement = "<raise>" , IDENTIFIER , ";";
 
 -- control flow
 

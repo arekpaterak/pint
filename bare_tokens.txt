@@ -10,15 +10,15 @@ BOOLEAN = '<true>' | '<false>'
 
 STRING = '<string_start> , {character} , <string_end>'
 
-UNARY_OPERATOR = <increment> | <decrement>
-
--- simple tokens
-
-NOT = '<not>'
+ASSIGNMENT = '<assignment>'
 
 BINARY_OPERATOR = '+' | '-' | '*' | '/' | '%' | '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' 
 
-SEMICOLON = ';'
+-- simple tokens
+
+'<not>'
+
+';'
 COMMA = ','
 
 LEFT_PARENTHESES = '('
@@ -28,6 +28,9 @@ RIGHT_BRACE = '}'
 LEFT_SQUARE_BRACKET = '['
 RIGHT_SQUARE_BRACKET = ']'
 
-'<assignment>'
 
-'<function>' | '<class>' | '<inherits>' | '<constructor>' | '<leaf>' | '<tree>' | '<fallen_leaf>' | '<for>' | '<while>' | '<try>' | '<except>' | '<finally>' | '<raise>' | '<continue>' | '<break>'
+'<function>' | '<class>' | '<inherits>' | '<constructor>' | '<for>' | '<while>' | '<try>' | '<except>' | '<finally>' | '<raise>' | '<continue>' | '<break>'
+
+'<leaf>' | '<tree>' | '<fallen_leaf>'
+
+'<int>' | '<float>' | '<bool>' | '<string>' | '<void>'

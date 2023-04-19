@@ -6,7 +6,7 @@ program = { definition | statement };
 
 statement = assignment_statement | call_statement | if_statement | for_statement | while_statement | try_statement | raise_statement | continue_statement | break_statement;
 
-assignment_statement = IDENTIFIER , "<assignment>" , expression , ";";
+assignment_statement = IDENTIFIER , ASSIGNMENT , expression , ";";
 
 call_statement = call , ";";
 
@@ -16,7 +16,7 @@ definition = class_definition | function_definition | variable_definition;
 
 -- variable
 
-variable_definition = type , IDENTIFIER , "<assignment>" , expression , ";";
+variable_definition = type , IDENTIFIER , ASSIGNMENT , expression , ";";
 
 -- function
 
@@ -24,7 +24,7 @@ function_definition = "<function>" , IDENTIFIER , "(", [ parameters ] , ")" , "-
 
 parameters = parameter , { "," , parameter };
 
-parameter = type , IDENTIFIER , [ "<assignment>" , expression ];
+parameter = type , IDENTIFIER , [ ASSIGNMENT , expression ];
 
 -- class
 
@@ -62,7 +62,7 @@ literal_expression = INTEGER | FLOAT | BOOLEAN | STRING;
 
 identifier_expression = IDENTIFIER;
 
-type = "int" | "float" | "bool" | "string" | IDENTIFIER;
+type = "<int>" | "<float>" | "<bool>" | "<string>" | "<void>"| IDENTIFIER;
 
 compound_identifier = { IDENTIFIER , "." } , IDENTIFIER ;
 

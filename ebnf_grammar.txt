@@ -1,0 +1,93 @@
+-- general structure
+
+program = { definition | statement };
+
+-- statement
+
+statement = assignment_statement | call_statement | if_statement | for_statement | while_statement | try_statement | raise_statement | continue_statement | break_statement;
+
+assignment_statement = INDENTIFIER , "=" , expression , ";";
+
+call_statement = call , ";";
+
+-- definition
+
+definition = class_definition | function_definition | variable_definition;
+
+-- variable
+
+variable_definition = type , INDENTIFIER , "=" , expression , ";";
+
+-- function
+
+function_definition = "<function>" , INDENTIFIER , "(", [ parameters ] , ")" , "->" , type , "{" , { statement } , "}";
+
+parameters = parameter , { "," , parameter };
+
+parameter = type , INDENTIFIER , [ "=" , expression ];
+
+-- class
+
+class_definition = "<class>" , INDENTIFIER , "<inherits>" , INDENTIFIER , "{" , { class_body } , "}";
+
+class_body = { field_declaration } ,
+             [ constructor_definition ] ,
+             { method_definition };
+
+field_declaration = type , INDENTIFIER , ";";
+
+constructor_definition = "<constructor>" , INDENTIFIER , "(", [ parameters ] , ")" , "{" , { statement } , "}";
+
+method_definition = function_definition;
+
+-- expression
+
+expression = ("(", expression, ")") | binary_expression | unary_expression | call_expression | literal_expression | INDENTIFIER_expression;
+
+binary_expression = expression , binary_operator , expression;
+binary_operator = "+" | "-" | "*" | "/" | "%" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "and" | "or";
+
+unary_expression = unary_operator , expression;
+unary_operator = "+" | "-" | "not";
+
+call_expression = call;
+
+call = compound_identifier , "(", [ arguments ] , ")";
+
+arguments = expression , { "," , expression };
+
+literal_expression = INTEGER | FLOAT | BOOLEAN | STRING;
+
+-- types and identifiers
+
+identifier_expression = INDENTIFIER;
+
+type = "int" | "float" | "bool" | "string" | INDENTIFIER;
+
+compound_identifier = { INDENTIFIER , "." } , INDENTIFIER ;
+
+-- if
+
+if_statement = simple_if_statement | compound_if_statement;
+
+simple_if_statement = "<leaf>" , expression , "{" , { statement } , "}";
+
+compound_if_statement = "<tree>" , "{" , simple_if_statement , { simple_if_statement } , [ "<fallen_leaf>" , "{" , { statement } , "}" ] , "}";
+
+-- loops
+
+for_statement = "<for>" , type, INDENTIFIER , "in" , ( compound_identifier | call ) , "{" , { statement } , "}";
+
+while_statement = "<while>" , expression , "{" , { statement } , "}";
+
+-- exceptions
+
+try_statement = "<try>" , "{" , { statement } , "}" , "<except>" , INDENTIFIER , "{" , { statement } , "}" , [ "<finally>" , "{" , { statement } , "}" ];
+
+raise_statement = "<raise>" , INDENTIFIER , ";";
+
+-- control flow
+
+continue_statement = "<continue>" , ";";
+
+break_statement = "<break>" , ";";

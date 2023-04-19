@@ -1,0 +1,18 @@
+identifier = 'letter' {'letter' | 'digit'}*
+integer = '\d+'
+float = '\d+.\d+'
+boolean = 'true|false'
+string = '"[^"]*"'
+binary_operator = '[+-*/%]|==|!=|<|>|<=|>=|and|or'
+unary_operator = '[+-]|not'
+indentation = '[ \t]+'
+newline = '\n'
+semicolon = ';'
+comma = ','
+left_paren = '('
+right_paren = ')'
+left_brace = '{'
+right_brace = '}'
+equals = '='
+keyword = '<function>|<class>|<inherits>|<constructor>|<leaf>|<tree>|<fallen_leaf>|<for>|<while>|<try>|<except>|<finally>|<raise>|<continue>|<break>'
+compound_identifier = identifier {'.' identifier}+

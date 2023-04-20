@@ -17,7 +17,7 @@ tokens = (
           'TREE', 'LEAF', 'FALLENLEAF',
           'FOR',
           'BREAK', 'CONTINUE', 'RETURN', 'PASS'
-          )
+        )
 
 # Ignored characters
 t_ignore = ' \t'
@@ -25,8 +25,8 @@ t_ignore = ' \t'
 # Token matching rules are written as regexs
 t_TYPE = r'🔢|⏺️|🆒|🔠'
 
-t_INT = r'\d+'
-t_FLOAT = r'\d+\.\d+'
+# t_INT = r'\d+'
+# t_FLOAT = r'\d+\.\d+'
 t_BOOLEAN = r'✅|❌'
 t_STRING = r'\".*\"'
 t_NONE = r'🌌'
@@ -82,7 +82,12 @@ t_PASS = r'🦥'
 
 # A function can be used if there is an associated action.
 # Write the matching regex in the docstring.
-def t_NUMBER(t):
+def t_FLOAT(t):
+    r'\d+\.\d+'
+    t.value = float(t.value)
+    return t
+
+def t_INT(t):
     r'\d+'
     t.value = int(t.value)
     return t

@@ -15,7 +15,7 @@ tokens = (
           'LIST', 'TUPLE', 'DICT', 'SET', 
           'FUNCTION', 'RETURNTYPE', 
           'TREE', 'LEAF', 'FALLENLEAF',
-          'FOR',
+          'LOOP',
           'BREAK', 'CONTINUE', 'RETURN', 'PASS'
         )
 
@@ -48,8 +48,8 @@ t_COMMA = r','
 t_DOT = r'\.'
 t_ASSIGN = r'◀️|='
 
-t_PLUS = r'➕|\+'
-t_MINUS = r'➖|-'
+t_PLUS = r'\+'
+t_MINUS = r'-'
 t_TIMES = r'\*'
 t_DIVIDE = r'/'
 
@@ -59,7 +59,7 @@ t_GREATER = r'🐘|>'
 t_GREATEREQUAL = r'🐘⚖️|>='
 t_EQUAL = r'⚖️|=='
 
-t_COMMENT = r'(💬⬇️\n(.|\n)*?💬⬆️)|(💬.*)'
+t_COMMENT = r'(💬⬇️(.|\n)*?💬⬆️)|(💬.*)'
 
 t_LIST = r'🐍'
 t_TUPLE = r'Tuple'
@@ -67,13 +67,13 @@ t_DICT = r'🗺️'
 t_SET = r'🗑️'
 
 t_FUNCTION = r'<function>'
-t_RETURNTYPE = r'→'
+t_RETURNTYPE = r'->'
 
 t_TREE = r'🌲'
 t_LEAF = r'🍃'
 t_FALLENLEAF = r'🍂'
 
-t_FOR = r'🔁'
+t_LOOP = r'🔁'
 
 t_BREAK = r'🛑'
 t_CONTINUE = r'🚦'
@@ -218,7 +218,7 @@ def p_error(p):
 #     print(f'Syntax error at {p.value!r}')
 
 
-with open('editor.txt', 'r', encoding="utf8") as f:
+with open('examples\\quicksort.pint', 'r', encoding="utf8") as f:
     data = f.read()
 
 lexer.input(data)
@@ -231,4 +231,4 @@ while True:
 
 
 # Build the parser
-# parser = yacc()
+parser = yacc()

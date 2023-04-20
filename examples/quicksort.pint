@@ -16,15 +16,17 @@
     }
 }
 
-<function> partition(🐍<🔢> array, 🔢 low, 🔢 high) → 🔢 {
+<function> partition(🐍<🔢> array, 🔢 low, 🔢 high) -> 🔢 {
     💬 choose the rightmost element as pivot
     🔢 pivot = array[high]
 
     💬 pointer for greater element
     🔢 i = low - 1
 
-    💬 traverse through all elements
-    💬 compare each element with pivot
+    💬⬇️  
+    traverse through all elements
+    compare each element with pivot 
+    💬⬆️
     🔁 (🔢 j = range(low, high)) {
         🍃 (array[j] 🐜⚖️ pivot) {
 

@@ -1,9 +1,20 @@
-💬⬇️
-Very 
-very 
-long
-comment
-💬⬆️
+💬 function to perform quicksort
+<function> quickSort(🐍<🔢> array, 🔢 low, 🔢 high) -> 🐍<🔢> {
+    🍃 (low 🐜 high) {
+        💬⬇️ 
+        Find pivot element such that
+        element smaller than pivot are on the left
+        element greater than pivot are on the right
+        💬⬆️
+        🔢 pi = partition(array, low, high)
+
+        💬 Recursive call on the left of pivot
+        quickSort(array, low, pi - 1)
+
+        💬 Recursive call on the right of pivot
+        quickSort(array, pi + 1, high)
+    }
+}
 
 <function> partition(🐍<🔢> array, 🔢 low, 🔢 high) → 🔢 {
     💬 choose the rightmost element as pivot
@@ -33,30 +44,13 @@ comment
     🦞 i + 1
 }
 
-🗺️[🔢, 🔠] m ◀️ 🗺️(1: "one", 2: "two", 3: "three")
+🐍<🔢> data = 🐍(1, 7, 4, 1, 10, 9, -2)
+print("Unsorted Array")
+print(data)
 
-🏛️ Drink {
-    ⏺️ volume;
-    🆒 isAlcohol;
+🔢 size = len(data)
 
-    Drink(⏺️ volume, 🆒 isAlcohol) {
-        <this>.volume = volume
-        <this>.isAlcohol = isAlcohol
-    }
+quickSort(data, 0, size - 1)
 
-    <function> drink(⏺️ volume = None) → <void> {
-        🍃 (volume == None) {
-            volume = <this>.volume
-        }
-
-        🍃 (<this>.volume 🐘⚖️ volume) {
-            <this>.volume -= volume
-        }
-    }
-}
-
-🏛️ Beer <inherits> Drink {
-    Beer(⏺️ volume) {
-        <super>(volume, ✅)
-    }
-}
+print("Sorted Array in Ascending Order:")
+print(data)

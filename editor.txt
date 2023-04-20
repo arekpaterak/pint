@@ -1,34 +1,41 @@
-<function> partition(list[1️⃣] array, 1️⃣ low, 1️⃣ high) → 1️⃣ {
+💬⬇️
+Very 
+very 
+long
+comment
+💬⬆️
+
+<function> partition(🐍[🔢] array, 🔢 low, 🔢 high) → 🔢 {
     💬 choose the rightmost element as pivot
-    1️⃣ pivot ◀️ array[high]
+    🔢 pivot = array[high]
 
     💬 pointer for greater element
-    1️⃣ i ◀️ low ➖ 1
+    🔢 i = low - 1
 
     💬 traverse through all elements
     💬 compare each element with pivot
-    🎁 1️⃣ j 📦 range(low, high) {
+    🔁 (🔢 j = range(low, high)) {
         🍃 (array[j] 🐜⚖️ pivot) {
 
             💬 If element smaller than pivot is found
             💬 swap it with the greater element pointed by i
-            i ➕◀️ 1
+            i += 1
 
             💬 Swapping element at i with element at j
-            (array[i], array[j]) ◀️ (array[j], array[i])
+            (array[i], array[j]) = (array[j], array[i])
         }
     }
 
     💬 Swap the pivot element with the greater element specified by i
-    (array[i ➕ 1], array[high]) ◀️ (array[high], array[i ➕ 1])
+    (array[i + 1], array[high]) = (array[high], array[i + 1])
 
     💬 Return the position from where partition is done
-    🦞 i ➕ 1
+    🦞 i + 1
 }
 
-<map>[1️⃣, 🔠] m ◀️ <map>(1: "one", 2: "two", 3: "three")
+🗺️[🔢, 🔠] m ◀️ 🗺️(1: "one", 2: "two", 3: "three")
 
-<class> Drink {
+🏛️ Drink {
     ⏺️ volume;
     🆒 isAlcohol;
 
@@ -48,7 +55,7 @@
     }
 }
 
-<class> Beer <inherits> Drink {
+🏛️ Beer <inherits> Drink {
     Beer(⏺️ volume) {
         <super>(volume, ✅)
     }

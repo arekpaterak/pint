@@ -27,8 +27,6 @@ t_ignore = ' \t'
 # Token matching rules are written as regexs
 t_TYPE = r'🔢|⏺️|🆒|🔠'
 
-# t_INT = r'\d+'
-# t_FLOAT = r'\d+\.\d+'
 t_BOOLEAN = r'✅|❌'
 t_STRING = r'\".*\"|✏️\“.*\”'
 t_NONE = r'🌌'
@@ -156,18 +154,9 @@ def p_type(p):
     '''
     pass
 
-# def p_built_in_structure(p):
-#     '''
-#     built_in_structure : LIST
-#                        | TUPLE
-#                        | DICT
-#                        | SET
-#     '''
-#     pass
-
 def p_types(p):
     '''
-    types : type COMMA types
+    types : types COMMA type
           | type
     '''
     pass
@@ -182,7 +171,6 @@ def p_definition(p):
     '''
     definition : class_definition
                | function_definition
-               | variable_definition
     '''
     p[0] = p[1]
 
@@ -190,12 +178,6 @@ def p_variable_definition(p):
     '''
     variable_definition : type IDENTIFIER ASSIGN expression NEWLINE
     '''
-    types = {
-        "🔢": int,
-        "⏺️": float,
-        "🆒": bool,
-        "🔠": str
-    }
 
     if p[2] in variables.keys():
         raise Exception(f'Variable {p[2]} already defined')
@@ -223,13 +205,14 @@ def p_statement(p):
               | break_statement
               | variable_definition
               | return_statement
+              | pass_statement
     '''
     p[0] = p[1]
 
 def p_return_statement(p):
     '''
     return_statement : RETURN expression NEWLINE
-                     | empty
+                     | RETURN NEWLINE
     '''
     pass
 
@@ -275,8 +258,8 @@ def p_simple_if_statement(p):
 
 def p_compound_if_statement(p):
     '''
-    compound_if_statement : TREE LBRACE simple_if_statements else_block RBRACE
-                          | TREE LBRACE simple_if_statements RBRACE
+    compound_if_statement : TREE LBRACE simple_if_statements else_block RBRACE NEWLINE
+                          | TREE LBRACE simple_if_statements RBRACE NEWLINE
     '''
     pass
 
@@ -317,6 +300,7 @@ def p_match_default(p):
     match_default : FALLENLEAF LBRACE statements RBRACE
     '''
     pass 
+
 def p_loop_statement(p):
     '''
     loop_statement : while_statement
@@ -346,6 +330,12 @@ def p_continue_statement(p):
 def p_break_statement(p):
     '''
     break_statement : BREAK NEWLINE
+    '''
+    pass
+
+def p_pass_statement(p):
+    '''
+    pass_statement : PASS NEWLINE
     '''
     pass
 
@@ -523,91 +513,30 @@ def p_literal(p):
 
 def p_identifier_expression(p):
     '''
-    identifier_expression : IDENTIFIER
+    identifier_expression : compound_identifier
     '''
     pass
 
 def p_error(p):
-    raise Exception(f'Syntax error at {p.value!r}, you idiot.')
-
-
-
-# examples
-
-# def p_expression(p):
-#     '''
-#     expression : term PLUS term
-#                | term MINUS term
-#     '''
-#     # p is a sequence that represents rule contents.
-#     #
-#     # expression : term PLUS term
-#     #   p[0]     : p[1] p[2] p[3]
-#     # 
-#     p[0] = ('binop', p[2], p[1], p[3])
-
-# def p_expression_term(p):
-#     '''
-#     expression : term
-#     '''
-#     p[0] = p[1]
-
-# def p_term(p):
-#     '''
-#     term : factor TIMES factor
-#          | factor DIVIDE factor
-#     '''
-#     p[0] = ('binop', p[2], p[1], p[3])
-
-# def p_term_factor(p):
-#     '''
-#     term : factor
-#     '''
-#     p[0] = p[1]
-
-# def p_factor_number(p):
-#     '''
-#     factor : NUMBER
-#     '''
-#     p[0] = ('number', p[1])
-
-# def p_factor_name(p):
-#     '''
-#     factor : NAME
-#     '''
-#     p[0] = ('name', p[1])
-
-# def p_factor_unary(p):
-#     '''
-#     factor : PLUS factor
-#            | MINUS factor
-#     '''
-#     p[0] = ('unary', p[1], p[2])
-
-# def p_factor_grouped(p):
-#     '''
-#     factor : LPAREN expression RPAREN
-#     '''
-#     p[0] = ('grouped', p[2])
-
-# def p_error(p):
-#     print(f'Syntax error at {p.value!r}')
+    raise Exception(f'Syntax error at {p.value!r}, line {p.lineno}, you idiot.')
 
 
 with open('examples\\simple.pint', 'r', encoding="utf8") as f:
     data = f.read()
 
-lexer.input(data)
+# uncomment to see the tokens (error messages in parsing don't work properly then)
+# lexer.input(data)
 
-while True:
-    tok = lexer.token()
-    if not tok:
-        break
-    print(tok)
+# while True:
+#     tok = lexer.token()
+#     if not tok:
+#         break
+#     print(tok)
 
 
-# Build the parser
+# build the parser
 parser = yacc()
 
+# add debug=True to see the rules being applied
 result = parser.parse(data, lexer=lexer)
 print(result)

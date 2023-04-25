@@ -1,8 +1,7 @@
 💬 function to perform tests
 <function> random_function() -> 🔢 {
-
     🔢 i = 1
-    🔁 (i < 5) {
+    🔁 (i 🐜 5) {
         i = i + 1
     }
 

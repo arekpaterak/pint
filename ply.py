@@ -7,17 +7,18 @@ from ply.yacc import yacc
 tokens = (
           'TYPE', 'INT', 'FLOAT', 'BOOLEAN', 'STRING', 'NONE',
           'IDENTIFIER', 'CLASS', 'INHERITS', 
-          'LBRACE', 'RBRACE', 'LPAREN', 'RPAREN', 'LBRACKET', 'RBRACKET',
-          'SEMICOLON', 'COLON', 'COMMA', 'DOT', 'ASSIGN', 
-          'PLUS', 'MINUS', 'TIMES', 'DIVIDE',
+          'LBRACE', 'RBRACE', 'LPAREN', 'RPAREN', 'LBRACKET', 'RBRACKET', 'LEFTARROW', 'RIGHTARROW',
+          'COLON', 'COMMA', 'DOT', 'ASSIGN', 
+          'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MODULO',
           'LESS', 'LESSEQUAL', 'GREATER', 'GREATEREQUAL', 'EQUAL', 'NOTEQUAL', 
           'AND', 'OR', 'NOT',
           'COMMENT',  
           'LIST', 'TUPLE', 'DICT', 'SET', 
-          'FUNCTION', 'RETURNTYPE', 'CONSTRUCTOR',
+          'FUNCTION', 'RETURNARROW', 'CONSTRUCTOR',
           'TREE', 'LEAF', 'FALLENLEAF',
           'LOOP',
-          'BREAK', 'CONTINUE', 'RETURN', 'PASS'
+          'BREAK', 'CONTINUE', 'RETURN', 'PASS',
+          'NEWLINE'
         )
 
 # Ignored characters
@@ -29,12 +30,12 @@ t_TYPE = r'🔢|⏺️|🆒|🔠'
 # t_INT = r'\d+'
 # t_FLOAT = r'\d+\.\d+'
 t_BOOLEAN = r'✅|❌'
-t_STRING = r'\".*\"|✏️\“({}|.)*\”'
+t_STRING = r'\".*\"|✏️\“.*\”'
 t_NONE = r'🌌'
 
 t_IDENTIFIER = r'[a-zA-Z_][a-zA-Z0-9_]*'
 t_CLASS = r'🏛️'
-t_INHERITS = r'<inherits>'
+t_INHERITS = r'👨‍👦'
 
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
@@ -42,23 +43,25 @@ t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_LBRACKET = r'\['
 t_RBRACKET = r'\]'
+t_LEFTARROW = r'<'
+t_RIGHTARROW = r'>'
 
-t_SEMICOLON = r';'
 t_COLON = r':'
 t_COMMA = r','
 t_DOT = r'\.'
-t_ASSIGN = r'◀️|='
+t_ASSIGN = r'='
 
 t_PLUS = r'\+'
 t_MINUS = r'-'
 t_TIMES = r'\*'
 t_DIVIDE = r'/'
+t_MODULO = r'%'
 
-t_LESS = r'🐜|<'
-t_LESSEQUAL = r'🐜⚖️|<='
-t_GREATER = r'🐘|>'
-t_GREATEREQUAL = r'🐘⚖️|>='
-t_EQUAL = r'⚖️|=='
+t_LESS = r'🐜'
+t_LESSEQUAL = r'🐜⚖️'
+t_GREATER = r'🐘'
+t_GREATEREQUAL = r'🐘⚖️'
+t_EQUAL = r'⚖️'
 
 t_AND = r'and'
 t_OR = r'or'
@@ -67,13 +70,13 @@ t_NOT = r'not'
 t_COMMENT = r'(💬⬇️(.|\n)*?💬⬆️)|(💬.*)'
 
 t_LIST = r'🐍'
-t_TUPLE = r'Tuple'
+t_TUPLE = r'🌼'
 t_DICT = r'🗺️'
 t_SET = r'🗑️'
 
 t_FUNCTION = r'<function>'
-t_CONSTRUCTOR = r'<constructor>'
-t_RETURNTYPE = r'->'
+t_CONSTRUCTOR = r'🏗️'
+t_RETURNARROW = r'->'
 
 t_TREE = r'🌲'
 t_LEAF = r'🍃'
@@ -85,6 +88,8 @@ t_BREAK = r'🛑'
 t_CONTINUE = r'🚦'
 t_RETURN = r'🦞'
 t_PASS = r'🦥'
+
+# t_NEWLINE = r'\n'
 
 # A function can be used if there is an associated action.
 # Write the matching regex in the docstring.
@@ -98,14 +103,13 @@ def t_INT(t):
     t.value = int(t.value)
     return t
 
-# Ignored token with an action associated with it
-def t_ignore_newline(t):
-    r'\n+'
-    t.lexer.lineno += t.value.count('\n')
+def t_NEWLINE(t):
+    r'\n'
+    t.lexer.lineno += 1
 
 # Error handler for illegal characters
 def t_error(t):
-    print(f'Illegal character {t.value[0]!r}')
+    print(f'Illegal character {t.value[0]!r} at line {t.lexer.lineno}, column {t.lexpos}.')
     t.lexer.skip(1)
 
 # Build the lexer object
@@ -141,6 +145,33 @@ def p_empty(p):
     '''
     pass
 
+def p_type(p):
+    '''
+    type : TYPE
+         | IDENTIFIER
+         | LIST LEFTARROW type RIGHTARROW
+         | TUPLE LEFTARROW types RIGHTARROW
+         | DICT LEFTARROW type COMMA type RIGHTARROW
+         | SET LEFTARROW type RIGHTARROW
+    '''
+    pass
+
+# def p_built_in_structure(p):
+#     '''
+#     built_in_structure : LIST
+#                        | TUPLE
+#                        | DICT
+#                        | SET
+#     '''
+#     pass
+
+def p_types(p):
+    '''
+    types : type COMMA types
+          | type
+    '''
+    pass
+
 def p_comment(p):
     '''
     comment : COMMENT
@@ -157,7 +188,7 @@ def p_definition(p):
 
 def p_variable_definition(p):
     '''
-    variable_definition : TYPE IDENTIFIER ASSIGN expression SEMICOLON
+    variable_definition : type IDENTIFIER ASSIGN expression NEWLINE
     '''
     types = {
         "🔢": int,
@@ -175,34 +206,45 @@ def p_variable_definition(p):
 
 def p_function_definition(p):
     '''
-    function_definition : FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNTYPE TYPE LBRACE statements RBRACE
+    function_definition : FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW type LBRACE statements RBRACE NEWLINE
+                        | FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW NONE LBRACE statements RBRACE NEWLINE
     '''
     pass
 
 # @TODO: Add support for try and raise statements
 def p_statement(p):
     '''
-    statement : assignment_statement
+    statement : assignment_statement 
               | call_statement
               | if_statement
+              | match_statement
               | loop_statement
               | continue_statement
               | break_statement
               | variable_definition
+              | return_statement
     '''
     p[0] = p[1]
 
+def p_return_statement(p):
+    '''
+    return_statement : RETURN expression NEWLINE
+                     | EMPTY
+    '''
+    pass
+
 def p_statements(p):
     '''
-    statements : statements statement
-               | statement
+    statements : statements statement NEWLINE
+               | statement NEWLINE
                | empty
     '''
     pass
 
 def p_assignment_statement(p):
     '''
-    assignment_statement : IDENTIFIER ASSIGN expression SEMICOLON
+    assignment_statement : IDENTIFIER ASSIGN expression
+                         | 
     '''
     if p[1] not in variables.keys():
         raise Exception(f'Variable {p[1]} not defined')
@@ -215,7 +257,7 @@ def p_assignment_statement(p):
 
 def p_call_statement(p):
     '''
-    call_statement : call SEMICOLON
+    call_statement : call
     '''
     pass
 
@@ -228,7 +270,14 @@ def p_if_statement(p):
 
 def p_simple_if_statement(p):
     '''
-    simple_if_statement : LEAF expression LBRACE statements RBRACE
+    simple_if_statement : LEAF LPAREN expression RPAREN LBRACE statements RBRACE NEWLINE
+    '''
+    pass
+
+def p_compound_if_statement(p):
+    '''
+    compound_if_statement : TREE LBRACE simple_if_statements else_statement RBRACE
+                          | TREE LBRACE simple_if_statements RBRACE
     '''
     pass
 
@@ -239,35 +288,41 @@ def p_simple_if_statements(p):
     '''
     pass
 
-def p_compound_if_statement(p):
-    '''
-    compound_if_statement : TREE LBRACE simple_if_statements else_statement RBRACE
-    '''
-    pass
-
 def p_else_statement(p):
     '''
     else_statement : FALLENLEAF LBRACE statements RBRACE
-                   | empty
+    '''
+    pass
+
+def p_loop_statement(p):
+    '''
+    loop_statement : while_statement
+                   | for_statement
     '''
     pass
 
 # @TODO: Add other loops
-def p_loop_statement(p):
+def p_while_statement(p):
     '''
-    loop_statement : LOOP LPAREN expression RPAREN LBRACE statements RBRACE
+    while_statement : LOOP LPAREN expression RPAREN LBRACE statements RBRACE
+    '''
+    pass
+
+def p_for_statement(p):
+    '''
+    for_statement : LOOP LPAREN type IDENTIFIER ASSIGN expression RPAREN LBRACE statements RBRACE
     '''
     pass
 
 def p_continue_statement(p):
     '''
-    continue_statement : CONTINUE SEMICOLON
+    continue_statement : CONTINUE
     '''
     pass
 
 def p_break_statement(p):
     '''
-    break_statement : BREAK SEMICOLON
+    break_statement : BREAK
     '''
     pass
 
@@ -281,56 +336,63 @@ def p_parameters(p):
 
 def p_parameter(p):
     '''
-    parameter : TYPE IDENTIFIER 
-              | TYPE IDENTIFIER ASSIGN expression
+    parameter : type IDENTIFIER 
+              | default_parameter
+    '''
+    pass
+
+def p_default_parameter(p):
+    '''
+    default_parameter : type IDENTIFIER ASSIGN expression
     '''
     pass
 
 def p_class_definition(p):
     '''
-    class_definition : CLASS IDENTIFIER LBRACE class_body RBRACE
-                     | CLASS IDENTIFIER INHERITS IDENTIFIER LBRACE class_body RBRACE
+    class_definition : CLASS IDENTIFIER LBRACE class_body RBRACE NEWLINE
+                     | CLASS IDENTIFIER INHERITS IDENTIFIER LBRACE class_body RBRACE NEWLINE
     '''
     pass
 
 def p_class_body(p):
     '''
-    class_body : field_declarations constructor_definition method_definitions
+    class_body : fields_declarations constructor_definition methods_definitions
+    '''
+    pass
+
+def p_fields_declarations(p):
+    '''
+    fields_declarations : fields_declarations field_declaration
+                        | field_declaration
+                        | empty
     '''
     pass
 
 def p_field_declaration(p):
     '''
-    field_declaration : TYPE IDENTIFIER SEMICOLON
+    field_declaration : type IDENTIFIER NEWLINE
     '''
     pass
 
-def p_field_declarations(p):
-    '''
-    field_declarations : field_declarations field_declaration
-                       | field_declaration
-                       | empty
-    '''
-    pass
 
 def p_constructor_definition(p):
     '''
-    constructor_definition : CONSTRUCTOR IDENTIFIER LPAREN parameters RPAREN LBRACE statements RBRACE
+    constructor_definition : CONSTRUCTOR IDENTIFIER LPAREN parameters RPAREN LBRACE statements RBRACE NEWLINE
                            | empty
+    '''
+    pass
+
+def p_methods_definitions(p):
+    '''
+    methods_definitions : methods_definitions method_definition
+                        | method_definition
+                        | empty
     '''
     pass
 
 def p_method_definition(p):
     '''
     method_definition : function_definition
-    '''
-    pass
-
-def p_method_definitions(p):
-    '''
-    method_definitions : method_definitions method_definition
-                       | method_definition
-                       | empty
     '''
     pass
 
@@ -341,24 +403,30 @@ def p_expression(p):
                | unary_expression
                | call_expression
                | literal_expression
-               | IDENTIFIER_expression
+               | identifier_expression
     '''
     pass
 
+def p_binary_operator(p):
+    '''
+    binary_operator : PLUS
+                    | MINUS
+                    | TIMES
+                    | DIVIDE
+                    | MODULO
+                    | EQUAL
+                    | NOTEQUAL
+                    | LESS
+                    | GREATER
+                    | LESSEQUAL
+                    | GREATEREQUAL
+                    | AND
+                    | OR
+    '''
+
 def p_binary_expression(p):
     '''
-    binary_expression : expression PLUS expression
-                      | expression MINUS expression
-                      | expression TIMES expression
-                      | expression DIVIDE expression
-                      | expression EQUAL expression
-                      | expression NOTEQUAL expression
-                      | expression LESS expression
-                      | expression GREATER expression
-                      | expression LESSEQUAL expression
-                      | expression GREATEREQUAL expression
-                      | expression AND expression
-                      | expression OR expression
+    binary_expression : expression binary_operator expression
     '''
     pass
 
@@ -378,6 +446,24 @@ def p_call_expression(p):
 def p_call(p):
     '''
     call : compound_identifier LPAREN arguments RPAREN
+         | LIST LPAREN arguments RPAREN
+         | SET LPAREN arguments RPAREN
+         | TUPLE LPAREN arguments RPAREN
+         | DICT LPAREN items RPAREN
+    '''
+    pass
+
+def p_items(p):
+    '''
+    items : items COMMA item
+          | item
+          | empty
+    '''
+    pass
+
+def p_item(p):
+    '''
+    item : expression COLON expression
     '''
     pass
 
@@ -411,9 +497,9 @@ def p_literal(p):
     '''
     pass
 
-def p_IDENTIFIER_expression(p):
+def p_identifier_expression(p):
     '''
-    IDENTIFIER_expression : IDENTIFIER
+    identifier_expression : IDENTIFIER
     '''
     pass
 

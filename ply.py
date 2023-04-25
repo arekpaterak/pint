@@ -229,22 +229,21 @@ def p_statement(p):
 def p_return_statement(p):
     '''
     return_statement : RETURN expression NEWLINE
-                     | EMPTY
+                     | empty
     '''
     pass
 
 def p_statements(p):
     '''
-    statements : statements statement NEWLINE
-               | statement NEWLINE
+    statements : statements statement
+               | statement
                | empty
     '''
     pass
 
 def p_assignment_statement(p):
     '''
-    assignment_statement : IDENTIFIER ASSIGN expression
-                         | 
+    assignment_statement : compound_identifier ASSIGN expression NEWLINE
     '''
     if p[1] not in variables.keys():
         raise Exception(f'Variable {p[1]} not defined')
@@ -257,7 +256,7 @@ def p_assignment_statement(p):
 
 def p_call_statement(p):
     '''
-    call_statement : call
+    call_statement : call NEWLINE
     '''
     pass
 
@@ -276,7 +275,7 @@ def p_simple_if_statement(p):
 
 def p_compound_if_statement(p):
     '''
-    compound_if_statement : TREE LBRACE simple_if_statements else_statement RBRACE
+    compound_if_statement : TREE LBRACE simple_if_statements else_block RBRACE
                           | TREE LBRACE simple_if_statements RBRACE
     '''
     pass
@@ -288,9 +287,9 @@ def p_simple_if_statements(p):
     '''
     pass
 
-def p_else_statement(p):
+def p_else_block(p):
     '''
-    else_statement : FALLENLEAF LBRACE statements RBRACE
+    else_block : FALLENLEAF LBRACE statements RBRACE
     '''
     pass
 
@@ -304,25 +303,25 @@ def p_loop_statement(p):
 # @TODO: Add other loops
 def p_while_statement(p):
     '''
-    while_statement : LOOP LPAREN expression RPAREN LBRACE statements RBRACE
+    while_statement : LOOP LPAREN expression RPAREN LBRACE statements RBRACE NEWLINE
     '''
     pass
 
 def p_for_statement(p):
     '''
-    for_statement : LOOP LPAREN type IDENTIFIER ASSIGN expression RPAREN LBRACE statements RBRACE
+    for_statement : LOOP LPAREN type IDENTIFIER ASSIGN expression RPAREN LBRACE statements RBRACE NEWLINE
     '''
     pass
 
 def p_continue_statement(p):
     '''
-    continue_statement : CONTINUE
+    continue_statement : CONTINUE NEWLINE
     '''
     pass
 
 def p_break_statement(p):
     '''
-    break_statement : BREAK
+    break_statement : BREAK NEWLINE
     '''
     pass
 
@@ -404,6 +403,7 @@ def p_expression(p):
                | call_expression
                | literal_expression
                | identifier_expression
+               | NONE
     '''
     pass
 
@@ -504,7 +504,7 @@ def p_identifier_expression(p):
     pass
 
 def p_error(p):
-    raise Exception(f'Syntax error at {p.value!r}. Our fault XD sowwy.')
+    raise Exception(f'Syntax error at {p.value!r}, you idiot.')
 
 
 

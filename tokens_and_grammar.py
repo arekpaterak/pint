@@ -18,7 +18,8 @@ tokens = (
           'TREE', 'LEAF', 'FALLENLEAF',
           'LOOP',
           'BREAK', 'CONTINUE', 'RETURN', 'PASS',
-          'NEWLINE'
+          'NEWLINE',
+          'SELF'
         )
 
 # Ignored characters
@@ -86,6 +87,8 @@ t_BREAK = r'🛑'
 t_CONTINUE = r'🚦'
 t_RETURN = r'🦞'
 t_PASS = r'🦥'
+
+t_SELF = r'🤗'
 
 # t_NEWLINE = r'\n'
 
@@ -384,6 +387,7 @@ def p_fields_declarations(p):
 def p_field_declaration(p):
     '''
     field_declaration : type IDENTIFIER NEWLINE
+                      | CLASS type IDENTIFIER NEWLINE
     '''
     pass
 
@@ -406,6 +410,7 @@ def p_methods_definitions(p):
 def p_method_definition(p):
     '''
     method_definition : function_definition
+                      | CLASS function_definition
     '''
     pass
 
@@ -485,6 +490,7 @@ def p_compound_identifier(p):
     '''
     compound_identifier : IDENTIFIER
                         | compound_identifier DOT IDENTIFIER
+                        | SELF DOT IDENTIFIER
     '''
     pass
 

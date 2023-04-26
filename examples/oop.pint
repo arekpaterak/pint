@@ -1,0 +1,39 @@
+🏛️ Drink {
+
+    ⏺️ liters
+    🆒 fizzy
+
+    🏗️ Beer (⏺️ lit = 0.5, 🆒 fiz = ❌) {
+        🤗.liters = lit
+        🤗.fizzy = fiz
+    }
+
+    🏛️ <function> getDescription() -> 🔠 {
+        🦞 "Brilliant drink"
+    }
+}
+
+🏛️ Beer 👨‍👦 Drink {
+
+    🔢 percents
+
+    🏗️ Beer (🔢 perc = 5, ⏺️ lit = 0.5, 🆒 fiz = ❌) {
+        🤗.liters = lit
+        🤗.fizzy = fiz
+        🤗.percents = perc
+    }
+
+    <function> getPercents() -> 🔢 {
+        🦞 🤗.percents
+    }
+
+    <function> getNothing() -> 🔢 {
+        🦞 🌌
+    }
+}
+
+Beer bgh = Beer(6, 0.499)
+bgh.getDescription()
+
+💬 improve regular beer
+bgh.percents = bgh.percents + 1

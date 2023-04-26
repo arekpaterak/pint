@@ -393,6 +393,7 @@ def p_field_declaration(p):
     '''
     field_declaration : type IDENTIFIER NEWLINE
                       | CLASS type IDENTIFIER NEWLINE
+                      | NEWLINE
     '''
     pass
 
@@ -416,6 +417,7 @@ def p_method_definition(p):
     '''
     method_definition : function_definition
                       | CLASS function_definition
+                      | NEWLINE
     '''
     pass
 
@@ -539,7 +541,7 @@ def p_error(p):
     raise Exception(f'Syntax error at {p.value!r}, line {p.lineno}, you idiot.')
 
 
-with open('examples\\quicksort.pint', 'r', encoding="utf8") as f:
+with open('examples\\oop.pint', 'r', encoding="utf8") as f:
     data = f.read()
 
 # uncomment to see the tokens (error messages in parsing don't work properly then)
@@ -556,4 +558,4 @@ with open('examples\\quicksort.pint', 'r', encoding="utf8") as f:
 parser = yacc()
 
 # add debug=True to see the rules being applied
-result = parser.parse(data, lexer=lexer)
+result = parser.parse(data, lexer=lexer, debug=True)

@@ -320,6 +320,7 @@ def p_loop_statement(p):
 def p_while_statement(p):
     '''
     while_statement : LOOP LPAREN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
+                    | LOOP LBRACE NEWLINE statements RBRACE NEWLINE
     '''
     pass
 
@@ -450,6 +451,7 @@ def p_binary_operator(p):
                     | AND
                     | OR
     '''
+    pass
 
 def p_binary_expression(p):
     '''
@@ -552,7 +554,6 @@ with open('examples\\oop.pint', 'r', encoding="utf8") as f:
 #     if not tok:
 #         break
 #     print(tok)
-
 
 # build the parser
 parser = yacc()

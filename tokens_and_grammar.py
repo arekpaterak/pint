@@ -66,7 +66,7 @@ t_AND = r'and'
 t_OR = r'or'
 t_NOT = r'not'
 
-t_COMMENT = r'(💬⬇️(.|\n)*?💬⬆️)|(💬.*)'
+# t_COMMENT = r'(💬⬇️(.|\n)*?💬⬆️\n)|(💬.*\n)'
 
 t_LIST = r'🐍'
 t_TUPLE = r'🌼'
@@ -107,10 +107,20 @@ def t_INT(t):
 def t_NEWLINE(t):
     r'\n'
     t.lexer.lineno += 1
+    return t
+
+def t_COMMENT(t):
+    r'(💬⬇️(.|\n)*?💬⬆️\n)|(💬.*\n)'
+    t.lexer.lineno += t.value.count('\n')
+    return t
 
 # Error handler for illegal characters
 def t_error(t):
-    print(f'Illegal character {t.value[0]!r} at line {t.lexer.lineno}, column {t.lexpos}.')
+    last_cr = t.lexer.lexdata.rfind('\n', 0, t.lexpos)
+    if last_cr < 0:
+        last_cr = 0
+    column = (t.lexpos - last_cr) + 1
+    raise Exception(f'Illegal character {t.value[0]!r} at line {t.lexer.lineno}, column {column}.')
     t.lexer.skip(1)
 
 # Build the lexer object
@@ -132,10 +142,8 @@ def p_program(p):
     '''
     program : program definition
             | program statement 
-            | program comment
             | definition
             | statement
-            | comment
             | empty
     '''
     p[0] = p[1]
@@ -164,12 +172,6 @@ def p_types(p):
     '''
     pass
 
-def p_comment(p):
-    '''
-    comment : COMMENT
-    '''
-    pass
-
 def p_definition(p):
     '''
     definition : class_definition
@@ -191,8 +193,8 @@ def p_variable_definition(p):
 
 def p_function_definition(p):
     '''
-    function_definition : FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW type LBRACE statements RBRACE NEWLINE
-                        | FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW NONE LBRACE statements RBRACE NEWLINE
+    function_definition : FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW type LBRACE NEWLINE statements RBRACE NEWLINE
+                        | FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW NONE LBRACE NEWLINE statements RBRACE NEWLINE
     '''
     pass
 
@@ -209,6 +211,8 @@ def p_statement(p):
               | variable_definition
               | return_statement
               | pass_statement
+              | COMMENT
+              | NEWLINE
     '''
     p[0] = p[1]
 
@@ -230,15 +234,16 @@ def p_statements(p):
 def p_assignment_statement(p):
     '''
     assignment_statement : compound_identifier ASSIGN expression NEWLINE
+                         | subscript_expression ASSIGN expression NEWLINE
     '''
-    if p[1] not in variables.keys():
-        raise Exception(f'Variable {p[1]} not defined')
+    # if p[1] not in variables.keys():
+    #     raise Exception(f'Variable {p[1]} not defined')
 
     # @TODO: Add support for type checking
     # if not isinstance(p[3], variables[p[1]].type):
     #     raise Exception(f'Variable {p[1]} type mismatch')
 
-    variables[p[1]].value = p[3]
+    # variables[p[1]].value = p[3]
 
 def p_call_statement(p):
     '''
@@ -255,7 +260,7 @@ def p_if_statement(p):
 
 def p_simple_if_statement(p):
     '''
-    simple_if_statement : LEAF LPAREN expression RPAREN LBRACE statements RBRACE NEWLINE
+    simple_if_statement : LEAF LPAREN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
     '''
     pass
 
@@ -281,7 +286,7 @@ def p_else_block(p):
 
 def p_match_statement(p):
     '''
-    match_statement : TREE LPAREN compound_identifier RPAREN LBRACE match_cases match_default RBRACE NEWLINE
+    match_statement : TREE LPAREN compound_identifier RPAREN LBRACE NEWLINE match_cases match_default RBRACE NEWLINE
     '''
     pass
 
@@ -300,7 +305,7 @@ def p_match_case(p):
 
 def p_match_default(p):
     '''
-    match_default : FALLENLEAF LBRACE statements RBRACE
+    match_default : FALLENLEAF LBRACE statements RBRACE NEWLINE
     '''
     pass 
 
@@ -314,13 +319,13 @@ def p_loop_statement(p):
 # @TODO: Add other loops
 def p_while_statement(p):
     '''
-    while_statement : LOOP LPAREN expression RPAREN LBRACE statements RBRACE NEWLINE
+    while_statement : LOOP LPAREN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
     '''
     pass
 
 def p_for_statement(p):
     '''
-    for_statement : LOOP LPAREN type IDENTIFIER ASSIGN expression RPAREN LBRACE statements RBRACE NEWLINE
+    for_statement : LOOP LPAREN type IDENTIFIER ASSIGN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
     '''
     pass
 
@@ -365,8 +370,8 @@ def p_default_parameter(p):
 
 def p_class_definition(p):
     '''
-    class_definition : CLASS IDENTIFIER LBRACE class_body RBRACE NEWLINE
-                     | CLASS IDENTIFIER INHERITS IDENTIFIER LBRACE class_body RBRACE NEWLINE
+    class_definition : CLASS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
+                     | CLASS IDENTIFIER INHERITS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
     '''
     pass
 
@@ -394,7 +399,7 @@ def p_field_declaration(p):
 
 def p_constructor_definition(p):
     '''
-    constructor_definition : CONSTRUCTOR IDENTIFIER LPAREN parameters RPAREN LBRACE statements RBRACE NEWLINE
+    constructor_definition : CONSTRUCTOR IDENTIFIER LPAREN parameters RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
                            | empty
     '''
     pass
@@ -422,6 +427,7 @@ def p_expression(p):
                | call_expression
                | literal_expression
                | identifier_expression
+               | subscript_expression
                | NONE
     '''
     pass
@@ -488,8 +494,8 @@ def p_item(p):
 
 def p_compound_identifier(p):
     '''
-    compound_identifier : IDENTIFIER
-                        | compound_identifier DOT IDENTIFIER
+    compound_identifier : compound_identifier DOT IDENTIFIER
+                        | IDENTIFIER
                         | SELF DOT IDENTIFIER
     '''
     pass
@@ -523,11 +529,17 @@ def p_identifier_expression(p):
     '''
     pass
 
+def p_subscript_expression(p):
+    '''
+    subscript_expression : expression LBRACKET expression RBRACKET
+    '''
+    pass
+
 def p_error(p):
     raise Exception(f'Syntax error at {p.value!r}, line {p.lineno}, you idiot.')
 
 
-with open('examples\\simple.pint', 'r', encoding="utf8") as f:
+with open('examples\\quicksort.pint', 'r', encoding="utf8") as f:
     data = f.read()
 
 # uncomment to see the tokens (error messages in parsing don't work properly then)
@@ -545,4 +557,3 @@ parser = yacc()
 
 # add debug=True to see the rules being applied
 result = parser.parse(data, lexer=lexer)
-print(result)

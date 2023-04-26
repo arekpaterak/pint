@@ -73,7 +73,7 @@ t_TUPLE = r'🌼'
 t_DICT = r'🗺️'
 t_SET = r'🗑️'
 
-t_FUNCTION = r'<function>'
+t_FUNCTION = r'🍺'
 t_CONSTRUCTOR = r'🏗️'
 t_RETURNARROW = r'->'
 

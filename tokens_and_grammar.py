@@ -129,14 +129,36 @@ lexer = lex()
 # --- Parser ---
 
 start = 'program'
+spacing = 4*' '
 
 variables = {}
+types = {
+        '🔢': 'int',
+        '🐍': 'list',
+        '🌼': 'tuple',
+        '🗺️': 'dict',
+        '🗑️': 'set',
+        '⏺️': 'float',
+        '🆒': 'bool',
+        '🔠': 'str'
+    }
+
+# @TODO: Add support for other emoji_operators
+emoji_operators = {
+        '🐜': '<',
+    }
 
 class Variable:
     def __init__(self, name, value, type):
         self.name = name
         self.value = value
         self.type = type
+
+def indent_statements(statements):
+    statements = statements.split('\n')
+    statements = [spacing + statement for statement in statements]
+    statements = '\n'.join(statements)
+    return statements
 
 def p_program(p):
     '''
@@ -146,13 +168,13 @@ def p_program(p):
             | statement
             | empty
     '''
-    p[0] = p[1]
+    p[0] = ''.join(p[1:])
 
 def p_empty(p):
     '''
     empty :
     '''
-    pass
+    p[0] = ''
 
 def p_type(p):
     '''
@@ -163,7 +185,7 @@ def p_type(p):
          | DICT LEFTARROW type COMMA type RIGHTARROW
          | SET LEFTARROW type RIGHTARROW
     '''
-    pass
+    p[0] = ''.join(p[1:])
 
 def p_types(p):
     '''
@@ -191,12 +213,15 @@ def p_variable_definition(p):
 
     variables[p[2]] = Variable(p[2], p[4], p[1])
 
+    # p[0] = p[2] + ': ' + types[p[1]] + ' = ' + str(p[4]) + '\n'
+    p[0] = f'{p[2]}: {types[p[1]]} = {str(p[4])}\n'
+
 def p_function_definition(p):
     '''
     function_definition : FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW type LBRACE NEWLINE statements RBRACE NEWLINE
                         | FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW NONE LBRACE NEWLINE statements RBRACE NEWLINE
     '''
-    pass
+    p[0] = f'def {p[2]}({p[4]}) -> {types[p[7]]}:\n{indent_statements(p[10])}'
 
 # @TODO: Add support for try and raise statements
 def p_statement(p):
@@ -211,7 +236,7 @@ def p_statement(p):
               | variable_definition
               | return_statement
               | pass_statement
-              | COMMENT
+              | comment
               | NEWLINE
     '''
     p[0] = p[1]
@@ -221,7 +246,7 @@ def p_return_statement(p):
     return_statement : RETURN expression NEWLINE
                      | RETURN NEWLINE
     '''
-    pass
+    p[0] = 'return ' + p[2] + '\n' if len(p) > 3 else 'return\n'
 
 def p_statements(p):
     '''
@@ -229,7 +254,7 @@ def p_statements(p):
                | statement
                | empty
     '''
-    pass
+    p[0] = ''.join(p[1:])
 
 def p_assignment_statement(p):
     '''
@@ -244,6 +269,7 @@ def p_assignment_statement(p):
     #     raise Exception(f'Variable {p[1]} type mismatch')
 
     # variables[p[1]].value = p[3]
+    p[0] = p[1] + ' = ' + p[3] + '\n'
 
 def p_call_statement(p):
     '''
@@ -314,7 +340,7 @@ def p_loop_statement(p):
     loop_statement : while_statement
                    | for_statement
     '''
-    pass
+    p[0] = p[1]
 
 # @TODO: Add other loops
 def p_while_statement(p):
@@ -322,7 +348,10 @@ def p_while_statement(p):
     while_statement : LOOP LPAREN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
                     | LOOP LBRACE NEWLINE statements RBRACE NEWLINE
     '''
-    pass
+    statements = p[7] if len(p) == 10 else p[4]
+    statements = indent_statements(statements)
+
+    p[0] = 'while ' + p[3] + ':\n' + statements if len(p) == 10 else 'while True:\n' + statements
 
 def p_for_statement(p):
     '''
@@ -348,32 +377,57 @@ def p_pass_statement(p):
     '''
     pass
 
+def p_comment(p):
+    '''
+    comment : COMMENT
+    '''
+    comment = p[1].splitlines()
+    if len(comment) > 1:
+        comment[0] = comment[0].replace('💬⬇️', '\'\'\'')
+        comment[-1] = comment[-1].replace('💬⬆️', '\'\'\'')
+        comment = '\n'.join([line for line in comment])
+    else:
+        comment = comment[0].replace('💬', '#')
+
+    p[0] = comment + '\n'
+
 def p_parameters(p):
     '''
     parameters : parameters COMMA parameter
                | parameter
                | empty
     '''
-    pass
+    p[0] = p[1] + ',' + p[3] if len(p) > 2 else p[1]
 
 def p_parameter(p):
     '''
-    parameter : type IDENTIFIER 
+    parameter : simple_parameter
               | default_parameter
     '''
-    pass
+    p[0] = p[1]
+
+def p_simple_parameter(p):
+    '''
+    simple_parameter : type IDENTIFIER
+    '''
+    p[0] = p[2] + ':' + p[1]
 
 def p_default_parameter(p):
     '''
     default_parameter : type IDENTIFIER ASSIGN expression
     '''
-    pass
+    p[0] = p[2] + ':' + p[1] + '=' + p[4]
 
 def p_class_definition(p):
     '''
     class_definition : CLASS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
                      | CLASS IDENTIFIER INHERITS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
     '''
+    if not p[2] in types.keys():
+        types.update({p[2]: p[2]})
+    else:
+        raise Exception(f'Class {p[2]} already defined')
+    
     pass
 
 def p_class_body(p):
@@ -433,7 +487,7 @@ def p_expression(p):
                | subscript_expression
                | NONE
     '''
-    pass
+    p[0] = p[1] if len(p) == 2 else p[2]
 
 def p_binary_operator(p):
     '''
@@ -451,13 +505,13 @@ def p_binary_operator(p):
                     | AND
                     | OR
     '''
-    pass
+    p[0] = emoji_operators[p[1]] if p[1] in emoji_operators.keys() else p[1]
 
 def p_binary_expression(p):
     '''
     binary_expression : expression binary_operator expression
     '''
-    pass
+    p[0] = ' '.join(map(str, p[1:]))
 
 def p_unary_expression(p):
     '''
@@ -502,7 +556,7 @@ def p_compound_identifier(p):
                         | IDENTIFIER
                         | SELF DOT IDENTIFIER
     '''
-    pass
+    p[0] = ''.join(p[1:])
 
 def p_arguments(p):
     '''
@@ -516,7 +570,7 @@ def p_literal_expression(p):
     '''
     literal_expression : literal
     '''
-    pass
+    p[0] = p[1]
 
 def p_literal(p):
     '''
@@ -525,13 +579,13 @@ def p_literal(p):
             | STRING
             | BOOLEAN
     '''
-    pass
+    p[0] = p[1]
 
 def p_identifier_expression(p):
     '''
     identifier_expression : compound_identifier
     '''
-    pass
+    p[0] = p[1]
 
 def p_subscript_expression(p):
     '''
@@ -543,7 +597,7 @@ def p_error(p):
     raise Exception(f'Syntax error at {p.value!r}, line {p.lineno}, you idiot.')
 
 
-with open('examples\\oop.pint', 'r', encoding="utf8") as f:
+with open('examples\\simple.pint', 'r', encoding="utf8") as f:
     data = f.read()
 
 # uncomment to see the tokens (error messages in parsing don't work properly then)
@@ -559,4 +613,7 @@ with open('examples\\oop.pint', 'r', encoding="utf8") as f:
 parser = yacc()
 
 # add debug=True to see the rules being applied
-result = parser.parse(data, lexer=lexer, debug=True)
+result = parser.parse(data, lexer=lexer)
+
+# uncomment to see translated code
+# print(result)

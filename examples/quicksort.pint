@@ -1,5 +1,5 @@
 💬 function to perform quicksort
-<function> quickSort(🐍<🔢> array, 🔢 low, 🔢 high) -> 🐍<🔢> {
+🍺 quickSort(🐍<🔢> array, 🔢 low, 🔢 high) -> 🐍<🔢> {
     🍃 (low 🐜 high) {
         💬⬇️ 
         Find pivot element such that
@@ -16,7 +16,7 @@
     }
 }
 
-<function> partition(🐍<🔢> array, 🔢 low, 🔢 high) -> 🔢 {
+🍺 partition(🐍<🔢> array, 🔢 low, 🔢 high) -> 🔢 {
     💬 choose the rightmost element as pivot
     🔢 pivot = array[high]
 

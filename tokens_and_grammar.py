@@ -100,12 +100,12 @@ t_AS = r'🤿'
 # A function can be used if there is an associated action.
 # Write the matching regex in the docstring.
 def t_FLOAT(t):
-    r'\d+\.\d+'
+    r'(\+|-)?\d+\.\d+'
     t.value = float(t.value)
     return t
 
 def t_INT(t):
-    r'\d+'
+    r'(\+|-)?\d+'
     t.value = int(t.value)
     return t
 
@@ -137,6 +137,7 @@ start = 'program'
 spacing = 4*' '
 
 variables = {}
+
 types = {
         '🔢': 'int',
         '🐍': 'list',
@@ -148,9 +149,12 @@ types = {
         '🔠': 'str'
     }
 
-# @TODO: Add support for other emoji_operators
 emoji_operators = {
         '🐜': '<',
+        '🐜⚖️': '<=',
+        '🐘': '>',
+        '🐘⚖️': '>=',
+        '⚖️': '=='
     }
 
 class Variable:
@@ -164,6 +168,13 @@ def indent_statements(statements):
     statements = [spacing + statement for statement in statements]
     statements = '\n'.join(statements)
     return statements
+
+def get_type(type_):
+    if len(type_) == 1:
+        return types[type_]
+    else:
+        args = [get_type(t) for t in type_[1:] if t not in ('<', '>', ' ', ',')]
+        return f'{types[type_[0]]}[{", ".join(args)}]'
 
 def p_program(p):
     '''
@@ -231,7 +242,7 @@ def p_type(p):
          | DICT LEFTARROW type COMMA type RIGHTARROW
          | SET LEFTARROW type RIGHTARROW
     '''
-    p[0] = ''.join(p[1:])
+    p[0] = (types[p[1]] + ''.join(p[2:])).replace('<', '[').replace('>', ']')
 
 def p_types(p):
     '''
@@ -259,15 +270,14 @@ def p_variable_definition(p):
 
     variables[p[2]] = Variable(p[2], p[4], p[1])
 
-    # p[0] = p[2] + ': ' + types[p[1]] + ' = ' + str(p[4]) + '\n'
-    p[0] = f'{p[2]}: {types[p[1]]} = {str(p[4])}\n'
+    p[0] = f'{p[2]}: {p[1]} = {str(p[4])}\n'
 
 def p_function_definition(p):
     '''
     function_definition : FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW type LBRACE NEWLINE statements RBRACE NEWLINE
                         | FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW NONE LBRACE NEWLINE statements RBRACE NEWLINE
-    '''
-    p[0] = f'def {p[2]}({p[4]}) -> {types[p[7]]}:\n{indent_statements(p[10])}'
+    '''    
+    p[0] = f'def {p[2]}({p[4]}) -> {p[7]}:\n{indent_statements(p[10])}'
 
 # @TODO: Add support for try and raise statements
 def p_statement(p):
@@ -321,20 +331,20 @@ def p_call_statement(p):
     '''
     call_statement : call NEWLINE
     '''
-    pass
+    p[0] = p[1] + '\n'
 
 def p_if_statement(p):
     '''
     if_statement : simple_if_statement
                  | compound_if_statement
     '''
-    pass
+    p[0] = p[1]
 
 def p_simple_if_statement(p):
     '''
     simple_if_statement : LEAF LPAREN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
     '''
-    pass
+    p[0] = f'if {p[3]}:\n{indent_statements(p[7])}\n'
 
 def p_compound_if_statement(p):
     '''
@@ -403,7 +413,7 @@ def p_for_statement(p):
     '''
     for_statement : LOOP LPAREN type IDENTIFIER ASSIGN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
     '''
-    pass
+    p[0] = f'for {p[4]} in {p[6]}:\n{indent_statements(p[10])}\n'
 
 def p_continue_statement(p):
     '''
@@ -427,15 +437,7 @@ def p_comment(p):
     '''
     comment : COMMENT
     '''
-    comment = p[1].splitlines()
-    if len(comment) > 1:
-        comment[0] = comment[0].replace('💬⬇️', '\'\'\'')
-        comment[-1] = comment[-1].replace('💬⬆️', '\'\'\'')
-        comment = '\n'.join([line for line in comment])
-    else:
-        comment = comment[0].replace('💬', '#')
-
-    p[0] = comment + '\n'
+    p[0] = p[1].replace('💬⬇️', '\'\'\'').replace('💬⬆️', '\'\'\'').replace('💬', '#')
 
 def p_parameters(p):
     '''
@@ -443,7 +445,7 @@ def p_parameters(p):
                | parameter
                | empty
     '''
-    p[0] = p[1] + ',' + p[3] if len(p) > 2 else p[1]
+    p[0] = p[1] + ', ' + p[3] if len(p) > 2 else p[1]
 
 def p_parameter(p):
     '''
@@ -456,13 +458,13 @@ def p_simple_parameter(p):
     '''
     simple_parameter : type IDENTIFIER
     '''
-    p[0] = p[2] + ':' + p[1]
+    p[0] = f'{p[2]}: {p[1]}'
 
 def p_default_parameter(p):
     '''
     default_parameter : type IDENTIFIER ASSIGN expression
     '''
-    p[0] = p[2] + ':' + p[1] + '=' + p[4]
+    p[0] = f'{p[2]}: {p[1]} = {p[4]}'
 
 def p_class_definition(p):
     '''
@@ -570,7 +572,7 @@ def p_call_expression(p):
     '''
     call_expression : call
     '''
-    pass
+    p[0] = p[1]
 
 def p_call(p):
     '''
@@ -580,7 +582,10 @@ def p_call(p):
          | TUPLE LPAREN arguments RPAREN
          | DICT LPAREN items RPAREN
     '''
-    pass
+    if p[1] in types.keys():
+        p[0] = f'{types[p[1]]}({p[3]})'
+    else:
+        p[0] = f'{p[1]}({p[3]})'
 
 def p_items(p):
     '''
@@ -588,13 +593,13 @@ def p_items(p):
           | item
           | empty
     '''
-    pass
+    p[0] = f'{p[1], p[3]}' if len(p) > 2 else p[1]
 
 def p_item(p):
     '''
     item : expression COLON expression
     '''
-    pass
+    p[0] = f'{p[1]}: {p[3]}'
 
 def p_compound_identifier(p):
     '''
@@ -610,7 +615,7 @@ def p_arguments(p):
               | expression
               | empty
     '''
-    pass
+    p[0] = str(p[1]) + ', ' + str(p[3]) if len(p) > 2 else str(p[1])
 
 def p_literal_expression(p):
     '''
@@ -637,7 +642,7 @@ def p_subscript_expression(p):
     '''
     subscript_expression : expression LBRACKET expression RBRACKET
     '''
-    pass
+    p[0] = ''.join(p[1:])
 
 def p_error(p):
     raise Exception(f'Syntax error at {p.value!r}, line {p.lineno}, you idiot.')

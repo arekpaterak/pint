@@ -8,7 +8,7 @@
         🤗.fizzy = fiz
     }
 
-    🏛️ <function> getDescription() -> 🔠 {
+    🏛️ 🍺 getDescription() -> 🔠 {
         🦞 "Brilliant drink"
     }
 }
@@ -23,11 +23,11 @@
         🤗.percents = perc
     }
 
-    <function> getPercents() -> 🔢 {
+    🍺 getPercents() -> 🔢 {
         🦞 🤗.percents
     }
 
-    <function> getNothing() -> 🔢 {
+    🍺 getNothing() -> 🔢 {
         🦞 🌌
     }
 }

@@ -19,7 +19,8 @@ tokens = (
           'LOOP',
           'BREAK', 'CONTINUE', 'RETURN', 'PASS',
           'NEWLINE',
-          'SELF'
+          'SELF',
+          'IMPORT', 'FROM', 'AS'
         )
 
 # Ignored characters
@@ -89,6 +90,10 @@ t_RETURN = r'🦞'
 t_PASS = r'🦥'
 
 t_SELF = r'🤗'
+
+t_IMPORT = r'🚢'
+t_FROM = r'🏝️'
+t_AS = r'🤿'
 
 # t_NEWLINE = r'\n'
 
@@ -162,11 +167,14 @@ def indent_statements(statements):
 
 def p_program(p):
     '''
-    program : program definition
-            | program statement 
-            | definition
-            | statement
-            | empty
+    program : newlines imports newlines definitions_and_statements newlines
+    '''
+    p[0] = ''.join(p[1:])
+
+def p_newlines(p):
+    '''
+    newlines : newlines NEWLINE
+             | empty
     '''
     p[0] = ''.join(p[1:])
 
@@ -175,6 +183,44 @@ def p_empty(p):
     empty :
     '''
     p[0] = ''
+
+def p_imports(p):
+    '''
+    imports : imports newlines import
+            | import
+            | empty
+    '''
+    p[0] = ''.join(p[1:])
+
+def p_import(p):
+    '''
+    import : IMPORT compound_identifier NEWLINE 
+           | IMPORT compound_identifier AS IDENTIFIER NEWLINE
+           | IMPORT compound_identifier FROM compound_identifier NEWLINE
+           | IMPORT compound_identifier FROM compound_identifier AS IDENTIFIER NEWLINE
+    '''
+
+    match p[1:]:
+        case ['🚢', _, '\n']:
+            p[0] = f'import {p[2]}\n'
+        case ['🚢', _, '🤿', _, '\n']:
+            p[0] = f'import {p[2]} as {p[4]}\n'
+        case ['🚢', _, '🏝️', _, '\n']:
+            p[0] = f'from {p[4]} import {p[2]}\n'
+        case ['🚢', _, '🏝️', _, '🤿', _, '\n']:
+            p[0] = f'from {p[4]} import {p[2]} as {p[6]}\n'
+        case _:
+            p[0] = '\n'
+
+def p_definitions_and_statements(p):
+    '''
+    definitions_and_statements : definitions_and_statements definition
+                               | definitions_and_statements statement
+                               | definition
+                               | statement
+                               | empty
+    '''
+    p[0] = ''.join(p[1:])
 
 def p_type(p):
     '''
@@ -596,10 +642,6 @@ def p_subscript_expression(p):
 def p_error(p):
     raise Exception(f'Syntax error at {p.value!r}, line {p.lineno}, you idiot.')
 
-
-with open('examples\\simple.pint', 'r', encoding="utf8") as f:
-    data = f.read()
-
 # uncomment to see the tokens (error messages in parsing don't work properly then)
 # lexer.input(data)
 
@@ -611,9 +653,3 @@ with open('examples\\simple.pint', 'r', encoding="utf8") as f:
 
 # build the parser
 parser = yacc()
-
-# add debug=True to see the rules being applied
-result = parser.parse(data, lexer=lexer)
-
-# uncomment to see translated code
-# print(result)

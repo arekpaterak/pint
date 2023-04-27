@@ -1,11 +1,20 @@
 🚢 pickle
 
 🍺 random_function() -> 🔢 {
+
+    💬 nested function
+    🍺 nested_function() -> 🔢 {
+        🔢 j = 1
+        💬 returns j
+        🦞 j
+    }
+
     💬 comment
     🔢 i = 1
     🔁 (i 🐜 5) {
         i = i + 1
-    } 
+    }
 
+    💬 returns i
     🦞 i
 }

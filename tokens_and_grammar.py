@@ -8,8 +8,9 @@ tokens = (
           'TYPE', 'INT', 'FLOAT', 'BOOLEAN', 'STRING', 'NONE',
           'IDENTIFIER', 'CLASS', 'INHERITS', 
           'LBRACE', 'RBRACE', 'LPAREN', 'RPAREN', 'LBRACKET', 'RBRACKET', 'LEFTARROW', 'RIGHTARROW',
-          'COLON', 'COMMA', 'DOT', 'ASSIGN', 
-          'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MODULO',
+          'COLON', 'COMMA', 'DOT', 
+          'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'TIMESASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN', 'POWERASSIGN', 'FLOORASSIGN',
+          'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MODULO', 'POWER', 'FLOOR',
           'LESS', 'LESSEQUAL', 'GREATER', 'GREATEREQUAL', 'EQUAL', 'NOTEQUAL', 
           'AND', 'OR', 'NOT',
           'COMMENT',  
@@ -28,14 +29,22 @@ t_ignore = ' \t'
 
 # Token matching rules are written as regexs
 t_TYPE = r'🔢|⏺️|🆒|🔠'
+t_LEFTARROW = r'<'
+t_RIGHTARROW = r'>'
 
 t_BOOLEAN = r'✅|❌'
 t_STRING = r'\".*\"|✏️\“.*\”'
 t_NONE = r'🌌'
 
 t_IDENTIFIER = r'[a-zA-Z_][a-zA-Z0-9_]*'
+
 t_CLASS = r'🏛️'
 t_INHERITS = r'👨‍👦'
+t_SELF = r'🤗'
+t_CONSTRUCTOR = r'🏗️'
+
+t_FUNCTION = r'🍺'
+t_RETURNARROW = r'->'
 
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
@@ -43,59 +52,69 @@ t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_LBRACKET = r'\['
 t_RBRACKET = r'\]'
-t_LEFTARROW = r'<'
-t_RIGHTARROW = r'>'
 
 t_COLON = r':'
 t_COMMA = r','
 t_DOT = r'\.'
-t_ASSIGN = r'='
 
+# assignment operators
+t_ASSIGN = r'='
+t_PLUSASSIGN = r'\+='
+t_MINUSASSIGN = r'-='
+t_TIMESASSIGN = r'\*='
+t_DIVIDEASSIGN = r'/='
+t_MODULOASSIGN = r'%='
+t_POWERASSIGN = r'\^='
+t_FLOORASSIGN = r'//='
+
+# arithmetic operators
 t_PLUS = r'\+'
 t_MINUS = r'-'
 t_TIMES = r'\*'
 t_DIVIDE = r'/'
 t_MODULO = r'%'
+t_POWER = r'\^'
+t_FLOOR = r'//'
 
+# comparison operators
 t_LESS = r'🐜'
 t_LESSEQUAL = r'🐜⚖️'
 t_GREATER = r'🐘'
 t_GREATEREQUAL = r'🐘⚖️'
 t_EQUAL = r'⚖️'
 
+# logical operators
 t_AND = r'and'
 t_OR = r'or'
 t_NOT = r'not'
+# t_AND = r'☹️'
+# t_OR = r'🙂'
+# t_NOT = r'🙃'
 
-# t_COMMENT = r'(💬⬇️(.|\n)*?💬⬆️\n)|(💬.*\n)'
-
+# data structures
 t_LIST = r'🐍'
 t_TUPLE = r'🌼'
 t_DICT = r'🗺️'
 t_SET = r'🗑️'
 
-t_FUNCTION = r'🍺'
-t_CONSTRUCTOR = r'🏗️'
-t_RETURNARROW = r'->'
-
+# if and match
 t_TREE = r'🌲'
 t_LEAF = r'🍃'
 t_FALLENLEAF = r'🍂'
 
+# loops
 t_LOOP = r'🔁'
 
+# flow control
 t_BREAK = r'🛑'
 t_CONTINUE = r'🚦'
 t_RETURN = r'🦞'
 t_PASS = r'🦥'
 
-t_SELF = r'🤗'
-
+# importing
 t_IMPORT = r'🚢'
 t_FROM = r'🏝️'
 t_AS = r'🤿'
-
-# t_NEWLINE = r'\n'
 
 # A function can be used if there is an associated action.
 # Write the matching regex in the docstring.
@@ -109,11 +128,13 @@ def t_INT(t):
     t.value = int(t.value)
     return t
 
+# t_NEWLINE = r'\n'
 def t_NEWLINE(t):
     r'\n'
     t.lexer.lineno += 1
     return t
 
+# t_COMMENT = r'(💬⬇️(.|\n)*?💬⬆️\n)|(💬.*\n)'
 def t_COMMENT(t):
     r'(💬⬇️(.|\n)*?💬⬆️\n)|(💬.*\n)'
     t.lexer.lineno += t.value.count('\n')
@@ -133,20 +154,19 @@ lexer = lex()
 
 # --- Parser ---
 
-start = 'program'
 spacing = 4*' '
 
 variables = {}
 
 types = {
         '🔢': 'int',
+        '⏺️': 'float',
+        '🆒': 'bool',
+        '🔠': 'str',
         '🐍': 'list',
         '🌼': 'tuple',
         '🗺️': 'dict',
-        '🗑️': 'set',
-        '⏺️': 'float',
-        '🆒': 'bool',
-        '🔠': 'str'
+        '🗑️': 'set'
     }
 
 emoji_operators = {
@@ -157,17 +177,20 @@ emoji_operators = {
         '⚖️': '=='
     }
 
+
 class Variable:
     def __init__(self, name, value, type):
         self.name = name
         self.value = value
         self.type = type
 
+
 def indent_statements(statements):
     statements = statements.split('\n')
     statements = [spacing + statement for statement in statements]
     statements = '\n'.join(statements)
     return statements
+
 
 def get_type(type_):
     if len(type_) == 1:
@@ -176,12 +199,17 @@ def get_type(type_):
         args = [get_type(t) for t in type_[1:] if t not in ('<', '>', ' ', ',')]
         return f'{types[type_[0]]}[{", ".join(args)}]'
 
+# PROGRAM
+start = 'program'
+
 def p_program(p):
     '''
     program : newlines imports newlines definitions_and_statements newlines
     '''
     p[0] = ''.join(p[1:])
 
+
+# NEWLINES
 def p_newlines(p):
     '''
     newlines : newlines NEWLINE
@@ -189,12 +217,16 @@ def p_newlines(p):
     '''
     p[0] = ''.join(p[1:])
 
+
+# EMPTY
 def p_empty(p):
     '''
     empty :
     '''
     p[0] = ''
 
+
+# IMPORTS
 def p_imports(p):
     '''
     imports : imports newlines import
@@ -223,16 +255,20 @@ def p_import(p):
         case _:
             p[0] = '\n'
 
+
+# DEFINITIONS AND STATEMENTS
 def p_definitions_and_statements(p):
     '''
-    definitions_and_statements : definitions_and_statements definition
-                               | definitions_and_statements statement
+    definitions_and_statements : definitions_and_statements comments definition
+                               | definitions_and_statements comments statement
                                | definition
                                | statement
                                | empty
     '''
     p[0] = ''.join(p[1:])
 
+
+# TYPES
 def p_type(p):
     '''
     type : TYPE
@@ -251,13 +287,18 @@ def p_types(p):
     '''
     pass
 
+
+# DEFINITION
 def p_definition(p):
     '''
     definition : class_definition
                | function_definition
+               | variable_definition
     '''
     p[0] = p[1]
 
+
+# VARIABLE DEFINITION
 def p_variable_definition(p):
     '''
     variable_definition : type IDENTIFIER ASSIGN expression NEWLINE
@@ -272,13 +313,27 @@ def p_variable_definition(p):
 
     p[0] = f'{p[2]}: {p[1]} = {str(p[4])}\n'
 
+
+# FUNCTION DEFINITION
 def p_function_definition(p):
     '''
-    function_definition : FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW type LBRACE NEWLINE statements RBRACE NEWLINE
-                        | FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW NONE LBRACE NEWLINE statements RBRACE NEWLINE
+    function_definition : FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW type LBRACE NEWLINE function_body RBRACE NEWLINE
+                        | FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
     '''    
     p[0] = f'def {p[2]}({p[4]}) -> {p[7]}:\n{indent_statements(p[10])}'
 
+def p_function_body(p):
+    '''
+    function_body : function_body statement comments
+                  | function_body variable_definition comments
+                  | function_body function_definition comments
+                  | comments
+                  | newlines
+                  | empty
+    '''
+    p[0] = ''.join(p[1:])
+
+# STATEMENTS
 # @TODO: Add support for try and raise statements
 def p_statement(p):
     '''
@@ -289,13 +344,19 @@ def p_statement(p):
               | loop_statement
               | continue_statement
               | break_statement
-              | variable_definition
               | return_statement
               | pass_statement
-              | comment
               | NEWLINE
     '''
     p[0] = p[1]
+
+def p_statements(p):
+    '''
+    statements : statements comments statement
+               | statement
+               | empty
+    '''
+    p[0] = ''.join(p[1:])
 
 def p_return_statement(p):
     '''
@@ -304,18 +365,12 @@ def p_return_statement(p):
     '''
     p[0] = 'return ' + p[2] + '\n' if len(p) > 3 else 'return\n'
 
-def p_statements(p):
-    '''
-    statements : statements statement
-               | statement
-               | empty
-    '''
-    p[0] = ''.join(p[1:])
 
+# ASSIGNMENT
 def p_assignment_statement(p):
     '''
-    assignment_statement : compound_identifier ASSIGN expression NEWLINE
-                         | subscript_expression ASSIGN expression NEWLINE
+    assignment_statement : compound_identifier assign expression NEWLINE
+                         | subscript_expression assign expression NEWLINE
     '''
     # if p[1] not in variables.keys():
     #     raise Exception(f'Variable {p[1]} not defined')
@@ -325,14 +380,31 @@ def p_assignment_statement(p):
     #     raise Exception(f'Variable {p[1]} type mismatch')
 
     # variables[p[1]].value = p[3]
-    p[0] = p[1] + ' = ' + p[3] + '\n'
+    p[0] = p[1] + p[2] + p[3] + '\n'
 
+def p_assign(p):
+    '''
+    assign : ASSIGN
+           | PLUSASSIGN
+           | MINUSASSIGN
+           | TIMESASSIGN
+           | DIVIDEASSIGN
+           | MODULOASSIGN
+           | POWERASSIGN
+           | FLOORASSIGN     
+    '''
+    p[0] = p[1]
+
+
+# CALL
 def p_call_statement(p):
     '''
     call_statement : call NEWLINE
     '''
     p[0] = p[1] + '\n'
 
+
+# IF
 def p_if_statement(p):
     '''
     if_statement : simple_if_statement
@@ -366,6 +438,8 @@ def p_else_block(p):
     '''
     pass
 
+
+# MATCH
 def p_match_statement(p):
     '''
     match_statement : TREE LPAREN compound_identifier RPAREN LBRACE NEWLINE match_cases match_default RBRACE NEWLINE
@@ -391,6 +465,7 @@ def p_match_default(p):
     '''
     pass 
 
+# LOOP
 def p_loop_statement(p):
     '''
     loop_statement : while_statement
@@ -398,7 +473,7 @@ def p_loop_statement(p):
     '''
     p[0] = p[1]
 
-# @TODO: Add other loops
+# WHILE, INFINITE LOOP
 def p_while_statement(p):
     '''
     while_statement : LOOP LPAREN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
@@ -409,36 +484,51 @@ def p_while_statement(p):
 
     p[0] = 'while ' + p[3] + ':\n' + statements if len(p) == 10 else 'while True:\n' + statements
 
+# FOR
 def p_for_statement(p):
     '''
     for_statement : LOOP LPAREN type IDENTIFIER ASSIGN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
     '''
     p[0] = f'for {p[4]} in {p[6]}:\n{indent_statements(p[10])}\n'
 
+
+# CONTINUE, BREAK, PASS
 def p_continue_statement(p):
     '''
     continue_statement : CONTINUE NEWLINE
     '''
-    pass
+    p[0] = 'continue\n'
 
 def p_break_statement(p):
     '''
     break_statement : BREAK NEWLINE
     '''
-    pass
+    p[0] = 'break\n'
 
 def p_pass_statement(p):
     '''
     pass_statement : PASS NEWLINE
     '''
-    pass
+    p[0] = 'pass\n'
 
+
+# COMMENTS
 def p_comment(p):
     '''
     comment : COMMENT
     '''
     p[0] = p[1].replace('💬⬇️', '\'\'\'').replace('💬⬆️', '\'\'\'').replace('💬', '#')
 
+def p_comments(p):
+    '''
+    comments : comments comment
+             | comment
+             | empty
+    '''
+    p[0] = ''.join(p[1:])
+
+
+# PARAMETERS
 def p_parameters(p):
     '''
     parameters : parameters COMMA parameter
@@ -466,6 +556,8 @@ def p_default_parameter(p):
     '''
     p[0] = f'{p[2]}: {p[1]} = {p[4]}'
 
+
+# CLASS
 def p_class_definition(p):
     '''
     class_definition : CLASS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
@@ -480,7 +572,7 @@ def p_class_definition(p):
 
 def p_class_body(p):
     '''
-    class_body : fields_declarations constructor_definition methods_definitions
+    class_body : comments fields_declarations comments constructor_definition comments methods_definitions comments
     '''
     pass
 
@@ -500,7 +592,7 @@ def p_field_declaration(p):
     '''
     pass
 
-
+# CONSTRUCTOR
 def p_constructor_definition(p):
     '''
     constructor_definition : CONSTRUCTOR IDENTIFIER LPAREN parameters RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
@@ -508,6 +600,7 @@ def p_constructor_definition(p):
     '''
     pass
 
+# METHODS
 def p_methods_definitions(p):
     '''
     methods_definitions : methods_definitions method_definition
@@ -523,6 +616,7 @@ def p_method_definition(p):
                       | NEWLINE
     '''
     pass
+
 
 def p_expression(p):
     '''
@@ -544,6 +638,8 @@ def p_binary_operator(p):
                     | TIMES
                     | DIVIDE
                     | MODULO
+                    | POWER
+                    | FLOOR
                     | EQUAL
                     | NOTEQUAL
                     | LESS

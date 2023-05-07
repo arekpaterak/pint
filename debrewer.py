@@ -1,6 +1,7 @@
 from tokens_and_grammar import lexer, parser
 
 import sys
+import os
 
 if len(sys.argv) > 1:
     try:
@@ -10,9 +11,7 @@ if len(sys.argv) > 1:
         print(f'File {sys.argv[1]} not found.')
         exit()
 else:
-    # raise Exception('No input file provided.')
-    with open('examples\\simple.pint', 'r', encoding="utf8") as f:
-        data =  f.read()
+    raise Exception('No input file provided. Use: python debrewer.py <input_file> [-o <output_file>] [-t]')
 
 if data[-1] != '\n':
     data += '\n'
@@ -23,7 +22,8 @@ result = parser.parse(data, lexer=lexer)
 # @TODO Add checking extensions and spliting file name
 match sys.argv[1:]:
     case [_]:
-        with open(f'{sys.argv[1].split(".")[0]}.py', 'w', encoding="utf8") as f:
+        output_file = os.path.basename(sys.argv[1]).replace('.pint', '.py')
+        with open(output_file, 'w', encoding="utf8") as f:
             f.write(result)
     case [_, '-o', _]:
         with open(sys.argv[3], 'w', encoding="utf8") as f:

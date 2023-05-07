@@ -436,23 +436,30 @@ def p_if_body(p):
 
 def p_compound_if_statement(p):
     '''
-    compound_if_statement : TREE LBRACE simple_if_statements else_block RBRACE NEWLINE
-                          | TREE LBRACE simple_if_statements RBRACE NEWLINE
+    compound_if_statement : TREE LBRACE NEWLINE if_elseif_statements else_block RBRACE NEWLINE
+                          | TREE LBRACE NEWLINE if_elseif_statements RBRACE NEWLINE
     '''
-    pass
+    p[0] = p[4] + p[5] if len(p) > 7 else p[4]
 
-def p_simple_if_statements(p):
+def p_if_elseif_statements(p):
     '''
-    simple_if_statements : simple_if_statements simple_if_statement
+    if_elseif_statements : if_elseif_statements elseif_statement
                          | simple_if_statement
     '''
-    pass
+    p[0] = ''.join(p[1:])
+
+def p_elseif_statement(p):
+    '''
+    elseif_statement : LEAF LPAREN expression RPAREN LBRACE NEWLINE if_body RBRACE NEWLINE
+    '''
+    p[0] = f'elif {p[3]}:\n{indent(p[7])}\n'
+
 
 def p_else_block(p):
     '''
-    else_block : FALLENLEAF LBRACE if_body RBRACE
+    else_block : FALLENLEAF LBRACE NEWLINE if_body RBRACE NEWLINE
     '''
-    pass
+    p[0] = f'else:\n{indent(p[4])}\n'
 
 
 # MATCH
@@ -498,7 +505,9 @@ def p_while_statement(p):
     statements = p[7] if len(p) == 10 else p[4]
     statements = indent(statements)
 
-    p[0] = 'while ' + p[3] + ':\n' + statements if len(p) == 10 else 'while True:\n' + statements
+    condition = p[3] if len(p) == 10 else 'True'
+
+    p[0] = f'while {condition}:\n{statements}\n'
 
 # FOR
 def p_for_statement(p):

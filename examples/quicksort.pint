@@ -37,14 +37,14 @@
             💬 Swapping element at i with element at j
             🔢 temp = array[j]
             array[j] = array[i]
-            array[i] = array[j]
+            array[i] = temp
         }
     }
 
     💬 Swap the pivot element with the greater element specified by i
     temp = array[i + 1]
     array[i + 1] = array[high]
-    array[high] = array[i + 1]
+    array[high] = temp
     
     💬 Return the position from where partition is done
     🦞 i + 1

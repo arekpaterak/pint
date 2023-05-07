@@ -13,7 +13,7 @@ tokens = (
           'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MODULO', 'POWER', 'FLOOR',
           'LESS', 'LESSEQUAL', 'GREATER', 'GREATEREQUAL', 'EQUAL', 'NOTEQUAL', 
           'AND', 'OR', 'NOT',
-          'COMMENT',  
+          'ONELINECOMMENT', 'MULTILINECOMMENT',
           'LIST', 'TUPLE', 'DICT', 'SET', 
           'FUNCTION', 'RETURNARROW', 'CONSTRUCTOR',
           'TREE', 'LEAF', 'FALLENLEAF',
@@ -135,9 +135,14 @@ def t_NEWLINE(t):
     return t
 
 # t_COMMENT = r'(💬⬇️(.|\n)*?💬⬆️\n)|(💬.*\n)'
-def t_COMMENT(t):
-    r'(💬⬇️(.|\n)*?💬⬆️\n)|(💬.*\n)'
+def t_MULTILINECOMMENT(t):
+    r'💬⬇️(.|\n)*?💬⬆️\n'
     t.lexer.lineno += t.value.count('\n')
+    return t
+
+def t_ONELINECOMMENT(t):
+    r'💬.*\n'
+    t.lexer.lineno += 1
     return t
 
 # Error handler for illegal characters
@@ -185,11 +190,11 @@ class Variable:
         self.type = type
 
 
-def indent_statements(statements):
-    statements = statements.split('\n')
-    statements = [spacing + statement for statement in statements]
-    statements = '\n'.join(statements)
-    return statements
+def indent(lines):
+    lines = lines.split('\n')
+    lines = [spacing + line for line in lines]
+    lines = '\n'.join(lines)
+    return lines
 
 
 def get_type(type_):
@@ -204,7 +209,7 @@ start = 'program'
 
 def p_program(p):
     '''
-    program : newlines imports newlines definitions_and_statements newlines
+    program : nonexecutables imports nonexecutables definitions_and_statements nonexecutables
     '''
     p[0] = ''.join(p[1:])
 
@@ -213,7 +218,7 @@ def p_program(p):
 def p_newlines(p):
     '''
     newlines : newlines NEWLINE
-             | empty
+             | NEWLINE
     '''
     p[0] = ''.join(p[1:])
 
@@ -229,7 +234,7 @@ def p_empty(p):
 # IMPORTS
 def p_imports(p):
     '''
-    imports : imports newlines import
+    imports : imports nonexecutables import
             | import
             | empty
     '''
@@ -259,8 +264,8 @@ def p_import(p):
 # DEFINITIONS AND STATEMENTS
 def p_definitions_and_statements(p):
     '''
-    definitions_and_statements : definitions_and_statements comments definition
-                               | definitions_and_statements comments statement
+    definitions_and_statements : definitions_and_statements nonexecutables definition
+                               | definitions_and_statements nonexecutables statement
                                | definition
                                | statement
                                | empty
@@ -285,7 +290,7 @@ def p_types(p):
     types : types COMMA type
           | type
     '''
-    pass
+    p[0] = p[1] if len(p) == 2 else ', '.join(p[1:])
 
 
 # DEFINITION
@@ -320,15 +325,14 @@ def p_function_definition(p):
     function_definition : FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW type LBRACE NEWLINE function_body RBRACE NEWLINE
                         | FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
     '''    
-    p[0] = f'def {p[2]}({p[4]}) -> {p[7]}:\n{indent_statements(p[10])}'
+    p[0] = f'def {p[2]}({p[4]}) -> {p[7]}:\n{indent(p[10])}'
 
 def p_function_body(p):
     '''
-    function_body : function_body statement comments
-                  | function_body variable_definition comments
-                  | function_body function_definition comments
-                  | comments
-                  | newlines
+    function_body : function_body statement nonexecutables
+                  | function_body variable_definition nonexecutables
+                  | function_body function_definition nonexecutables
+                  | nonexecutables
                   | empty
     '''
     p[0] = ''.join(p[1:])
@@ -380,7 +384,7 @@ def p_assignment_statement(p):
     #     raise Exception(f'Variable {p[1]} type mismatch')
 
     # variables[p[1]].value = p[3]
-    p[0] = p[1] + p[2] + p[3] + '\n'
+    p[0] = f'{p[1]} {p[2]} {p[3]}\n'
 
 def p_assign(p):
     '''
@@ -393,7 +397,10 @@ def p_assign(p):
            | POWERASSIGN
            | FLOORASSIGN     
     '''
-    p[0] = p[1]
+    if p[1] == '^=':
+        p[0] = '**='
+    else:
+        p[0] = p[1]
 
 
 # CALL
@@ -414,9 +421,18 @@ def p_if_statement(p):
 
 def p_simple_if_statement(p):
     '''
-    simple_if_statement : LEAF LPAREN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
+    simple_if_statement : LEAF LPAREN expression RPAREN LBRACE NEWLINE if_body RBRACE NEWLINE
     '''
-    p[0] = f'if {p[3]}:\n{indent_statements(p[7])}\n'
+    p[0] = f'if {p[3]}:\n{indent(p[7])}\n'
+
+def p_if_body(p):
+    '''
+    if_body : if_body statement nonexecutables
+            | if_body variable_definition nonexecutables
+            | nonexecutables
+            | empty
+    '''
+    p[0] = ''.join(p[1:])
 
 def p_compound_if_statement(p):
     '''
@@ -434,7 +450,7 @@ def p_simple_if_statements(p):
 
 def p_else_block(p):
     '''
-    else_block : FALLENLEAF LBRACE statements RBRACE
+    else_block : FALLENLEAF LBRACE if_body RBRACE
     '''
     pass
 
@@ -480,7 +496,7 @@ def p_while_statement(p):
                     | LOOP LBRACE NEWLINE statements RBRACE NEWLINE
     '''
     statements = p[7] if len(p) == 10 else p[4]
-    statements = indent_statements(statements)
+    statements = indent(statements)
 
     p[0] = 'while ' + p[3] + ':\n' + statements if len(p) == 10 else 'while True:\n' + statements
 
@@ -489,7 +505,7 @@ def p_for_statement(p):
     '''
     for_statement : LOOP LPAREN type IDENTIFIER ASSIGN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
     '''
-    p[0] = f'for {p[4]} in {p[6]}:\n{indent_statements(p[10])}\n'
+    p[0] = f'for {p[4]} in {p[6]}:\n{indent(p[10])}\n'
 
 
 # CONTINUE, BREAK, PASS
@@ -515,15 +531,43 @@ def p_pass_statement(p):
 # COMMENTS
 def p_comment(p):
     '''
-    comment : COMMENT
+    comment : oneline_comment
+            | multiline_comment
     '''
-    p[0] = p[1].replace('💬⬇️', '\'\'\'').replace('💬⬆️', '\'\'\'').replace('💬', '#')
+    p[0] = p[1]
+
+
+def p_multiline_comment(p):
+    '''
+    multiline_comment : MULTILINECOMMENT
+    '''
+    lines = p[1].replace('💬⬇️', '').replace('💬⬆️', '').strip().split('\n')
+    lines = ['# ' + line.strip() for line in lines]
+    lines = '\n'.join(lines) + '\n'
+
+    p[0] = lines
+
+
+def p_oneline_comment(p):
+    '''
+    oneline_comment : ONELINECOMMENT
+    '''
+    p[0] = p[1].replace('💬', '#')
+
 
 def p_comments(p):
     '''
     comments : comments comment
              | comment
-             | empty
+    '''
+    p[0] = ''.join(p[1:])
+
+
+def p_nonexecutables(p):
+    '''
+    nonexecutables : nonexecutables comments
+                   | nonexecutables newlines
+                   | empty
     '''
     p[0] = ''.join(p[1:])
 
@@ -536,6 +580,12 @@ def p_parameters(p):
                | empty
     '''
     p[0] = p[1] + ', ' + p[3] if len(p) > 2 else p[1]
+
+def p_class_parameters(p):
+    '''
+    class_parameters : parameters
+    '''
+    p[0] = f'self, {p[1]}' if len(p) > 1 else 'self'
 
 def p_parameter(p):
     '''
@@ -568,54 +618,92 @@ def p_class_definition(p):
     else:
         raise Exception(f'Class {p[2]} already defined')
     
-    pass
+    if len(p) == 8:
+        p[0] = f'class {p[2]}:\n{indent(p[5])}\n'
+    else:
+        p[0] = f'class {p[2]}({p[4]}):\n{indent(p[7])}\n'  
+    
 
 def p_class_body(p):
     '''
-    class_body : comments fields_declarations comments constructor_definition comments methods_definitions comments
+    class_body : nonexecutables fields_declarations nonexecutables constructor_definition nonexecutables methods_definitions nonexecutables
     '''
-    pass
+    p[0] = ''.join(p[1:])
 
 def p_fields_declarations(p):
     '''
-    fields_declarations : fields_declarations field_declaration
+    fields_declarations : fields_declarations nonexecutables field_declaration
                         | field_declaration
                         | empty
     '''
-    pass
+    p[0] = ''.join(p[1:])
+
+class Class:
+    def __init__(self, name):
+        self.name = name
+        self.cls_fields = {}
+        self.fields = {}
+        self.constructor = None
+        self.methods = []
+
+classes = []
 
 def p_field_declaration(p):
     '''
     field_declaration : type IDENTIFIER NEWLINE
                       | CLASS type IDENTIFIER NEWLINE
-                      | NEWLINE
     '''
-    pass
+
+    current_class = classes[-1]
+
+    if len(p) == 4:
+        identifier = p[2]
+
+        if identifier in current_class.fields.keys():
+            raise Exception(f'Field {identifier} already defined')
+
+        field = Variable(identifier, None, p[1])
+        current_class.fields[identifier] = field
+    else:
+        identifier = p[3]
+
+        if identifier in current_class.cls_fields.keys():
+            raise Exception(f'Field {identifier} already defined')
+
+        cls_field = Variable(identifier, None, p[2])
+        current_class.cls_fields[identifier] = cls_field
+
+        p[0] = f'{identifier}: {p[2]}\n'
 
 # CONSTRUCTOR
 def p_constructor_definition(p):
     '''
-    constructor_definition : CONSTRUCTOR IDENTIFIER LPAREN parameters RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
+    constructor_definition : CONSTRUCTOR IDENTIFIER LPAREN class_parameters RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
                            | empty
     '''
-    pass
+    if len(p) > 2:
+        p[0] = f'def __init__({p[4]}):\n{indent(p[8])}\n'
+    else:
+        p[0] = ''
 
 # METHODS
 def p_methods_definitions(p):
     '''
-    methods_definitions : methods_definitions method_definition
+    methods_definitions : methods_definitions nonexecutables method_definition
                         | method_definition
                         | empty
     '''
-    pass
+    p[0] = ''.join(p[1:])
+
 
 def p_method_definition(p):
     '''
-    method_definition : function_definition
-                      | CLASS function_definition
-                      | NEWLINE
-    '''
-    pass
+    method_definition : FUNCTION IDENTIFIER LPAREN class_parameters RPAREN RETURNARROW type LBRACE NEWLINE function_body RBRACE NEWLINE
+                      | CLASS FUNCTION IDENTIFIER LPAREN class_parameters RPAREN RETURNARROW type LBRACE NEWLINE function_body RBRACE NEWLINE
+                      | FUNCTION IDENTIFIER LPAREN class_parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
+                      | CLASS FUNCTION IDENTIFIER LPAREN class_parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
+    '''    
+    p[0] = ' '.join(p[1:])
 
 
 def p_expression(p):
@@ -649,7 +737,10 @@ def p_binary_operator(p):
                     | AND
                     | OR
     '''
-    p[0] = emoji_operators[p[1]] if p[1] in emoji_operators.keys() else p[1]
+    if p[1] == '^':
+        p[0] = '**'
+    else:
+        p[0] = emoji_operators[p[1]] if p[1] in emoji_operators.keys() else p[1]
 
 def p_binary_expression(p):
     '''
@@ -662,7 +753,7 @@ def p_unary_expression(p):
     unary_expression : MINUS expression
                      | NOT expression
     '''
-    pass
+    p[0] = f'{p[1]}{p[2]}'
 
 def p_call_expression(p):
     '''
@@ -679,6 +770,7 @@ def p_call(p):
          | DICT LPAREN items RPAREN
     '''
     if p[1] in types.keys():
+        # @TODO Match types
         p[0] = f'{types[p[1]]}({p[3]})'
     else:
         p[0] = f'{p[1]}({p[3]})'

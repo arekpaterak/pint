@@ -1,7 +1,6 @@
 🚢 pickle
 
 🍺 random_function() -> 🔢 {
-
     💬 nested function
     🍺 nested_function() -> 🔢 {
         🔢 j = 1

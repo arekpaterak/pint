@@ -628,6 +628,9 @@ def p_class_body(p):
     '''
     class_body : nonexecutables fields_declarations nonexecutables constructor_definition nonexecutables methods_definitions nonexecutables
     '''
+
+    # TODO: Create a Class here
+
     p[0] = ''.join(p[1:])
 
 def p_fields_declarations(p):
@@ -636,6 +639,9 @@ def p_fields_declarations(p):
                         | field_declaration
                         | empty
     '''
+
+    # TODO: Try to pass the right side as a list
+
     p[0] = ''.join(p[1:])
 
 class Class:

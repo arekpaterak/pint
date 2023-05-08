@@ -617,6 +617,29 @@ def p_default_parameter(p):
 
 
 # CLASS
+
+class Class:
+    def __init__(self, name, cls_fields, fields, constructor, cls_methods, methods):
+        self.name = name
+        self.cls_fields = cls_fields
+        self.fields = fields
+        self.constructor = constructor
+        self.cls_methods = cls_methods
+        self.methods = methods
+
+    def __str__(self):
+        cls_fields = '\n'.join([f'{spacing}{field.name}: {field.type}' for field in self.cls_fields])
+
+        # fields = '\n'.join([f'{spacing}self.{field.name}: {field.type}' for field in self.fields])
+
+        constructor = f'{spacing}def __init__(self):\n{indent(str(self.constructor))}' if self.constructor else ''
+
+        cls_methods = '\n'.join([f'{spacing}{method.name}({", ".join(method.parameters)}) -> {method.return_type}:\n{indent(method.body)}' for method in self.cls_methods])
+
+        methods = '\n'.join([f'{spacing}{method.name}({", ".join(method.parameters)}) -> {method.return_type}:\n{indent(method.body)}' for method in self.methods])
+
+        return f'{cls_fields}\n\n{constructor}\n\n{cls_methods}\n\n{methods}'
+
 def p_class_definition(p):
     '''
     class_definition : CLASS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
@@ -627,10 +650,21 @@ def p_class_definition(p):
     else:
         raise Exception(f'Class {p[2]} already defined')
     
+    # if len(p) == 8:
+    #     p[0] = f'class {p[2]}:\n{indent(p[5])}\n'
+    # else:
+    #     p[0] = f'class {p[2]}({p[4]}):\n{indent(p[7])}\n'  
+
     if len(p) == 8:
-        p[0] = f'class {p[2]}:\n{indent(p[5])}\n'
+        cls = p[5]
+        cls.name = p[2]
+        classes.append(cls)
     else:
-        p[0] = f'class {p[2]}({p[4]}):\n{indent(p[7])}\n'  
+        cls = p[7]
+        cls.name = p[2]
+        classes.append(cls)
+
+    p[0] = f'class {p[2]}:\n{indent(str(cls))}\n'
     
 
 def p_class_body(p):
@@ -640,7 +674,23 @@ def p_class_body(p):
 
     # TODO: Create a Class here
 
-    p[0] = ''.join(p[1:])
+    # p[0] = ''.join(p[1:])
+
+    def split_list_by(l, p):
+        yes, no = [], []
+        for i in l:
+            (yes if p(i) else no).append(i)
+        return yes, no
+
+    fields_declarations = p[2]
+    fields_declarations = split_list_by(fields_declarations, lambda field: field.is_cls_field)
+
+    constructor_definition = p[4]
+
+    methods_definitions = p[6]
+    methods_definitions = split_list_by(methods_definitions, lambda method: method.is_cls_method)
+
+    p[0] = Class(None, fields_declarations[0], fields_declarations[1], constructor_definition, methods_definitions[0], methods_definitions[1])
 
 def p_fields_declarations(p):
     '''
@@ -649,17 +699,25 @@ def p_fields_declarations(p):
                         | empty
     '''
 
-    # TODO: Try to pass the right side as a list
+    # p[0] = ''.join(p[1:])
 
-    p[0] = ''.join(p[1:])
+    flatten = lambda l: (item for sublist in l for item in sublist)
 
-class Class:
-    def __init__(self, name):
+    match p[1:]:
+        case [_, _, _]:
+            p[0] = [*flatten(p[1]), p[3]]
+        case Field():
+            p[0] = [p[1]]
+        case _:
+            p[0] = []
+
+
+class Field:
+    def __init__(self, name, type, is_cls_field: bool = False):
         self.name = name
-        self.cls_fields = {}
-        self.fields = {}
-        self.constructor = None
-        self.methods = []
+        self.type = type
+        self.is_cls_field = is_cls_field
+        
 
 classes = []
 
@@ -669,31 +727,43 @@ def p_field_declaration(p):
                       | CLASS type IDENTIFIER NEWLINE
     '''
 
-    current_class = classes[-1]
+    # current_class = classes[-1]
 
-    if len(p) == 4:
-        identifier = p[2]
+    match p[1:]:
+        case [_, _, _]:
+            identifier = p[2]
 
-        if identifier in current_class.fields.keys():
-            raise Exception(f'Field {identifier} already defined')
+            # if identifier in current_class.fields.keys():
+            #     raise Exception(f'Field {identifier} already defined')
 
-        field = Variable(identifier, None, p[1])
-        current_class.fields[identifier] = field
-    else:
-        identifier = p[3]
+            # field = Variable(identifier, None, p[1])
+            # current_class.fields[identifier] = field
 
-        if identifier in current_class.cls_fields.keys():
-            raise Exception(f'Field {identifier} already defined')
+            p[0] = Field(identifier, p[1])
+        case ['🏛️', _, _, _]:
+            identifier = p[3]
 
-        cls_field = Variable(identifier, None, p[2])
-        current_class.cls_fields[identifier] = cls_field
+            # if identifier in current_class.cls_fields.keys():
+            #     raise Exception(f'Field {identifier} already defined')
 
-        p[0] = f'{identifier}: {p[2]}\n'
+            # cls_field = Variable(identifier, None, p[2])
+            # current_class.cls_fields[identifier] = cls_field
+
+            # p[0] = f'{identifier}: {p[2]}\n'
+
+            p[0] = Field(identifier, p[2], True)
+        
 
 # CONSTRUCTOR
+
+class Constructor:
+    def __init__(self, parameters, statements):
+        self.parameters = parameters
+        self.statements = statements
+
 def p_constructor_definition(p):
     '''
-    constructor_definition : CONSTRUCTOR IDENTIFIER LPAREN class_parameters RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
+    constructor_definition : CONSTRUCTOR IDENTIFIER LPAREN class_parameters RPAREN LBRACE NEWLINE function_body RBRACE NEWLINE
                            | empty
     '''
     if len(p) > 2:
@@ -702,13 +772,38 @@ def p_constructor_definition(p):
         p[0] = ''
 
 # METHODS
+
+class Function:
+    def __init__(self, name, parameters, return_type, body):
+        self.name = name
+        self.parameters = parameters
+        self.return_type = return_type
+        self.body = body
+
+
+class Method(Function):
+    def __init__(self, name, parameters, return_type, body, is_cls_method: bool = False):
+        super().__init__(name, parameters, return_type, body)
+        self.is_cls_method = is_cls_method
+
+
 def p_methods_definitions(p):
     '''
     methods_definitions : methods_definitions nonexecutables method_definition
                         | method_definition
                         | empty
     '''
-    p[0] = ''.join(p[1:])
+    # p[0] = ''.join(p[1:])
+
+    flatten = lambda l: (item for sublist in l for item in sublist)
+
+    match p[1:]:
+        case [_, _, _]:
+            p[0] = [*flatten(p[1]), p[3]]
+        case Method():
+            p[0] = [p[1]]
+        case _:
+            p[0] = []
 
 
 def p_method_definition(p):
@@ -718,7 +813,17 @@ def p_method_definition(p):
                       | FUNCTION IDENTIFIER LPAREN class_parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
                       | CLASS FUNCTION IDENTIFIER LPAREN class_parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
     '''    
-    p[0] = ' '.join(p[1:])
+    # p[0] = ' '.join(p[1:])
+
+    match p[1], p[7]:
+        case ['🏛️', '🌌']:
+            p[0] = Method(p[3], p[4], p[7], p[11], True)
+        case ['🏛️', _]:
+            p[0] = Method(p[3], p[4], p[7], p[11], True)
+        case [_, '🌌']:
+            p[0] = Method(p[2], p[4], p[7], p[10])
+        case [_, _]:
+            p[0] = Method(p[2], p[4], p[7], p[10])
 
 
 def p_expression(p):
@@ -812,6 +917,13 @@ def p_compound_identifier(p):
     '''
     p[0] = ''.join(p[1:])
 
+# def p_self_identifier(p):
+#     '''
+#     self_identifier : SELF DOT IDENTIFIER
+#     '''
+#     p[0] = ''.join(p[1:])
+
+
 def p_arguments(p):
     '''
     arguments : arguments COMMA expression
@@ -848,7 +960,7 @@ def p_subscript_expression(p):
     p[0] = ''.join(p[1:])
 
 def p_error(p):
-    raise Exception(f'Syntax error at {p.value!r}, line {p.lineno}, you idiot.')
+    raise Exception(f'Syntax error at {p.value!r}, line {p.lineno}, you idiot!')
 
 # uncomment to see the tokens (error messages in parsing don't work properly then)
 # lexer.input(data)

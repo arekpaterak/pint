@@ -256,11 +256,11 @@ def p_import(p):
     match p[1:]:
         case ["🚢", _, "\n"]:
             p[0] = f"import {p[2]}\n"
-        case ["🚢", _, "'🤿", _, "\n"]:
+        case ["🚢", _, "🤿", _, "\n"]:
             p[0] = f"import {p[2]} as {p[4]}\n"
-        case ["🚢", _, "'🏝️", _, "\n"]:
+        case ["🚢", _, "🏝️", _, "\n"]:
             p[0] = f"from {p[4]} import {p[2]}\n"
-        case ["🚢", _, "'🏝️", _, "'🤿", _, "\n"]:
+        case ["🚢", _, "🏝️", _, "🤿", _, "\n"]:
             p[0] = f"from {p[4]} import {p[2]} as {p[6]}\n"
         case _:
             p[0] = "\n"
@@ -658,10 +658,10 @@ class Class:
 
     def __str__(self):
         cls_fields = "\n".join(
-            [f"{spacing}{field.name}: {field.type}" for field in self.cls_fields]
+            [f"{field.name}: {field.type}" for field in self.cls_fields]
         )
 
-        # fields = '\n'.join([f'{spacing}self.{field.name}: {field.type}' for field in self.fields])
+        # fields = '\n'.join([f'self.{field.name}: {field.type}' for field in self.fields])
 
         constructor = str(self.constructor) if self.constructor else ""
 
@@ -843,8 +843,7 @@ class Method(Function):
         self.is_cls_method = is_cls_method
 
     def __str__(self):
-        cls_method_header = f"@classmethod\n" if self.is_cls_method else ""
-        return f"{cls_method_header}{super().__str__()}"
+        return f"@classmethod\n{super().__str__()}".replace("self", "cls") if self.is_cls_method else super().__str__()
 
 
 def p_methods_definitions(p):
@@ -855,13 +854,10 @@ def p_methods_definitions(p):
     """
     # p[0] = ''.join(p[1:])
 
-    flatten = lambda l: (item for sublist in l for item in sublist)
-
     match p[1:]:
         case [_, _, _]:
-            # p[0] = [*p[1], p[3]]
-            p[0] = [*flatten(p[1]), p[3]]
-        case Method():
+            p[0] = [*p[1], p[3]]
+        case [Method()]:
             p[0] = [p[1]]
         case _:
             p[0] = []
@@ -880,7 +876,7 @@ def p_method_definition(p):
         case ["🏛️", "'🌌"]:
             p[0] = Method(p[3], p[5], "None", p[11], True)
         case ["🏛️", _]:
-            p[0] = Method(p[3], p[5], p[7], p[11], True)
+            p[0] = Method(p[3], p[5], p[8], p[11], True)
         case [_, "🌌"]:
             p[0] = Method(p[2], p[4], "None", p[10])
         case [_, _]:

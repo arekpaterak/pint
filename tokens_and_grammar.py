@@ -574,7 +574,7 @@ def p_multiline_comment(p):
     """
     multiline_comment : MULTILINECOMMENT
     """
-    lines = p[1].replace("💬⬇️", "").replace("'💬⬆️", "").strip().split("\n")
+    lines = p[1].replace("💬⬇️", "").replace("💬⬆️", "").strip().split("\n")
     lines = ["# " + line.strip() for line in lines]
     lines = "\n".join(lines) + "\n"
 
@@ -873,7 +873,7 @@ def p_method_definition(p):
     # p[0] = ' '.join(p[1:])
 
     match p[1], p[7]:
-        case ["🏛️", "'🌌"]:
+        case ["🏛️", "🌌"]:
             p[0] = Method(p[3], p[5], "None", p[11], True)
         case ["🏛️", _]:
             p[0] = Method(p[3], p[5], p[8], p[11], True)
@@ -1019,7 +1019,7 @@ def p_literal(p):
             | NONE
     """
     if str(p[1]) in "✅❌🌌":
-        p[0] = p[1].replace("✅", "True").replace("❌", 'False').replace("🌌", "None")
+        p[0] = p[1].replace("✅", "True").replace("❌", "False").replace("🌌", "None")
     else:
         p[0] = p[1]
 

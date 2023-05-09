@@ -433,6 +433,20 @@ def p_call_statement(p):
     p[0] = p[1] + "\n"
 
 
+# CONDITION
+def p_condition(p):
+    """
+    condition : boolean_expression
+              | call_expression
+              | identifier_expression
+              | subscript_expression
+    """
+
+    # TODO: Add support for type checking (bool)
+
+    p[0] = p[1]
+
+
 # IF
 def p_if_statement(p):
     """
@@ -444,7 +458,7 @@ def p_if_statement(p):
 
 def p_simple_if_statement(p):
     """
-    simple_if_statement : LEAF LPAREN expression RPAREN LBRACE NEWLINE if_body RBRACE NEWLINE
+    simple_if_statement : LEAF LPAREN condition RPAREN LBRACE NEWLINE if_body RBRACE NEWLINE
     """
     p[0] = f"if {p[3]}:\n{indent(p[7])}\n"
 
@@ -477,7 +491,7 @@ def p_if_elseif_statements(p):
 
 def p_elseif_statement(p):
     """
-    elseif_statement : LEAF LPAREN expression RPAREN LBRACE NEWLINE if_body RBRACE NEWLINE
+    elseif_statement : LEAF LPAREN condition RPAREN LBRACE NEWLINE if_body RBRACE NEWLINE
     """
     p[0] = f"elif {p[3]}:\n{indent(p[7])}\n"
 
@@ -531,7 +545,7 @@ def p_loop_statement(p):
 # WHILE, INFINITE LOOP
 def p_while_statement(p):
     """
-    while_statement : LOOP LPAREN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
+    while_statement : LOOP LPAREN condition RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
                     | LOOP LBRACE NEWLINE statements RBRACE NEWLINE
     """
     statements = p[7] if len(p) == 10 else p[4]
@@ -901,8 +915,8 @@ def p_expression(p):
                | literal_expression
                | identifier_expression
                | subscript_expression
+               | boolean_expression
     """
-    # TODO split into categories: expressions should be less ambiguous, e.g. if statement should accept only boolean expressions 
     p[0] = p[1] if len(p) == 2 else p[2]
 
 
@@ -915,19 +929,41 @@ def p_binary_operator(p):
                     | MODULO
                     | POWER
                     | FLOOR
-                    | EQUAL
-                    | NOTEQUAL
-                    | LESS
-                    | GREATER
-                    | LESSEQUAL
-                    | GREATEREQUAL
-                    | AND
-                    | OR
     """
     if p[1] == "^":
         p[0] = "**"
     else:
         p[0] = emoji_operators[p[1]] if p[1] in emoji_operators.keys() else p[1]
+
+
+def p_relation_expression(p):
+    """
+    relation_expression : expression relation_operator expression
+    """
+
+    # TODO check if both expressions are comparable
+
+    p[0] = " ".join(map(str, p[1:]))
+
+
+def p_relation_operator(p):
+    """
+    relation_operator : EQUAL
+                      | NOTEQUAL
+                      | LESS
+                      | GREATER
+                      | LESSEQUAL
+                      | GREATEREQUAL
+    """
+    p[0] = emoji_operators[p[1]] if p[1] in emoji_operators.keys() else p[1]
+
+
+def p_boolean_binary_operator(p):
+    """
+    boolean_binary_operator : AND
+                            | OR
+    """
+    p[0] = emoji_operators[p[1]] if p[1] in emoji_operators.keys() else p[1]
 
 
 def p_binary_expression(p):
@@ -940,7 +976,6 @@ def p_binary_expression(p):
 def p_unary_expression(p):
     """
     unary_expression : MINUS expression
-                     | NOT expression
     """
     p[0] = f"{p[1]}{p[2]}"
 
@@ -1030,13 +1065,26 @@ def p_literal(p):
     literal : INT
             | FLOAT
             | STRING
-            | BOOLEAN
             | NONE
     """
-    if str(p[1]) in "✅❌🌌":
-        p[0] = p[1].replace("✅", "True").replace("❌", "False").replace("🌌", "None")
+    if str(p[1]) == "🌌":
+        p[0] = p[1].replace("🌌", "None")
     else:
         p[0] = p[1]
+
+# old
+# def p_literal(p):
+#     """
+#     literal : INT
+#             | FLOAT
+#             | STRING
+#             | BOOLEAN
+#             | NONE
+#     """
+#     if str(p[1]) in "✅❌🌌":
+#         p[0] = p[1].replace("✅", "True").replace("❌", "False").replace("🌌", "None")
+#     else:
+#         p[0] = p[1]
 
 
 def p_identifier_expression(p):
@@ -1053,6 +1101,40 @@ def p_subscript_expression(p):
     p[0] = "".join(p[1:])
 
 
+def p_boolean_expression(p):
+    """
+    boolean_expression : boolean_binary_expression
+                       | boolean_unary_expression
+                       | boolean_literal_expression
+    """
+    p[0] = p[1]
+
+
+def p_boolean_binary_expression(p):
+    """
+    boolean_binary_expression : expression boolean_binary_operator expression
+                              | relation_expression
+    """
+
+    # TODO check if both expressions are boolean
+
+    p[0] = " ".join(map(str, p[1:]))
+
+
+def p_boolean_unary_expression(p):
+    """
+    boolean_unary_expression : NOT boolean_expression
+    """
+    p[0] = " ".join(map(str, p[1:]))
+
+
+def p_boolean_literal_expression(p):
+    """
+    boolean_literal_expression : BOOLEAN
+    """
+    p[0] = p[1].replace("✅", "True").replace("❌", "False")
+
+    
 def p_error(p):
     raise Exception(f"Syntax error at {p.value!r}, line {p.lineno}, you 🤡!")
 

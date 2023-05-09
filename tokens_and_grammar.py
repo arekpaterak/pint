@@ -193,7 +193,7 @@ class Variable:
 
 
 def indent(lines):
-    lines = lines.split("\n")
+    lines = lines.strip().split("\n")
     lines = [spacing + line for line in lines]
     lines = "\n".join(lines)
     return lines
@@ -313,6 +313,7 @@ def p_definition(p):
 def p_variable_definition(p):
     """
     variable_definition : type IDENTIFIER ASSIGN expression NEWLINE
+                        | type IDENTIFIER ASSIGN expression oneline_comment
     """
 
     if p[2] in variables.keys():
@@ -322,8 +323,12 @@ def p_variable_definition(p):
 
     variables[p[2]] = Variable(p[2], p[4], p[1])
 
-    p[0] = f"{p[2]}: {p[1]} = {str(p[4])}\n"
-
+    match p[-1]:
+        case "\n":
+            p[0] = f"{p[2]}: {p[1]} = {str(p[4])}\n"
+        case _:
+            p[0] = f"{p[2]}: {p[1]} = {str(p[4])} {p[5]}"
+            
 
 # FUNCTION DEFINITION
 def p_function_definition(p):
@@ -331,7 +336,7 @@ def p_function_definition(p):
     function_definition : FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW type LBRACE NEWLINE function_body RBRACE NEWLINE
                         | FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
     """
-    p[0] = f"def {p[2]}({p[4]}) -> {p[7].replace('🌌', 'None')}:\n{indent(p[10])}"
+    p[0] = f"def {p[2]}({p[4]}) -> {p[7].replace('🌌', 'None')}:\n{indent(p[10])}\n"
 
 
 def p_function_body(p):
@@ -385,6 +390,8 @@ def p_assignment_statement(p):
     """
     assignment_statement : compound_identifier assign expression NEWLINE
                          | subscript_expression assign expression NEWLINE
+                         | compound_identifier assign expression oneline_comment
+                         | subscript_expression assign expression oneline_comment
     """
     # if p[1] not in variables.keys():
     #     raise Exception(f'Variable {p[1]} not defined')
@@ -394,8 +401,12 @@ def p_assignment_statement(p):
     #     raise Exception(f'Variable {p[1]} type mismatch')
 
     # variables[p[1]].value = p[3]
-    p[0] = f"{p[1]} {p[2]} {p[3]}\n"
-
+    
+    match p[-1]:
+        case "\n":
+            p[0] = f"{p[1]} {p[2]} {p[3]}\n"
+        case _:
+            p[0] = f"{p[1]} {p[2]} {p[3]} {p[4]}"
 
 def p_assign(p):
     """
@@ -669,7 +680,7 @@ class Class:
 
         methods = "\n".join(map(str, self.methods))
 
-        return f"{cls_fields}\n{constructor}\n{cls_methods}\n{methods}"
+        return "\n".join([item for item in [cls_fields, constructor, cls_methods, methods] if item])
 
 
 def p_class_definition(p):
@@ -745,11 +756,9 @@ def p_fields_declarations(p):
 
     # p[0] = ''.join(p[1:])
 
-    flatten = lambda l: (item for sublist in l for item in sublist)
-
     match p[1:]:
         case [_, _, _]:
-            p[0] = [*flatten(p[1]), p[3]]
+            p[0] = [*p[1], p[3]]
         case Field():
             p[0] = [p[1]]
         case _:
@@ -808,7 +817,7 @@ class Constructor:
         self.statements = statements
 
     def __str__(self):
-        return f"def __init__({self.parameters}):\n{indent(self.statements)}" if self.parameters else f"def __init__(self):\n{indent(self.statements)}"
+        return f"def __init__({self.parameters}):\n{indent(self.statements)}\n" if self.parameters else f"def __init__(self):\n{indent(self.statements)}\n"
 
 
 def p_constructor_definition(p):
@@ -834,7 +843,7 @@ class Function:
         self.body = body
 
     def __str__(self):
-        return f"def {self.name}({self.parameters}) -> {self.return_type}:\n{indent(self.body)}"
+        return f"def {self.name}({self.parameters}) -> {self.return_type}:\n{indent(self.body)}\n"
 
 
 class Method(Function):
@@ -979,10 +988,16 @@ def p_compound_identifier(p):
     compound_identifier : compound_identifier DOT IDENTIFIER
                         | IDENTIFIER
                         | SELF DOT IDENTIFIER
+                        | INHERITS DOT IDENTIFIER
+                        | INHERITS
     """
     match p[1:]:
         case ["🤗", _, _]:
             p[0] = f"self.{p[3]}"
+        case ["👨‍👦", _, _]:
+            p[0] = f"super().{p[3]}"
+        case ["👨‍👦"]:
+            p[0] = "super"
         case _:
             p[0] = "".join(p[1:])
 
@@ -1039,11 +1054,11 @@ def p_subscript_expression(p):
 
 
 def p_error(p):
-    raise Exception(f"Syntax error at {p.value!r}, line {p.lineno}, you idiot!")
+    raise Exception(f"Syntax error at {p.value!r}, line {p.lineno}, you 🤡!")
 
 
 # uncomment to see the tokens (error messages in parsing don't work properly then)
-# lexer.input(data)
+# lexer.input(data) 
 
 # while True:
 #     tok = lexer.token()

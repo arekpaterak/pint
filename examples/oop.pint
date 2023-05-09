@@ -3,7 +3,7 @@
     ⏺️ liters
     🆒 fizzy
 
-    🏗️ Beer (⏺️ lit = 0.5, 🆒 fiz = ❌) {
+    🏗️ Drink (⏺️ lit = 0.5, 🆒 fiz = ❌) {
         🤗.liters = lit
         🤗.fizzy = fiz
     }
@@ -13,13 +13,13 @@
     }
 }
 
+
 🏛️ Beer 👨‍👦 Drink {
 
     🔢 percents
 
     🏗️ Beer (🔢 perc = 5, ⏺️ lit = 0.5, 🆒 fiz = ❌) {
-        🤗.liters = lit
-        🤗.fizzy = fiz
+        👨‍👦(lit, fiz)
         🤗.percents = perc
     }
 
@@ -31,6 +31,7 @@
         🦞 🌌
     }
 }
+
 
 Beer bgh = Beer(6, 0.499)
 bgh.getDescription()

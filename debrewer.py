@@ -1,4 +1,5 @@
 from tokens_and_grammar import lexer, parser
+from utils import PintException
 
 import sys
 import os
@@ -42,9 +43,17 @@ match sys.argv[1:]:
     case _:
         raise Exception('Invalid arguments. Use: python debrewer.py <input_file> [-o <output_file>] [-t]')
 
-# add debug=True to see the rules being applied
-# result = parser.parse(program, lexer=lexer, debug=True)
-result = parser.parse(program, lexer=lexer)
+try:
+    # add debug=True to see the rules being applied
+    # result = parser.parse(program, lexer=lexer, debug=True)
+    result = parser.parse(program, lexer=lexer)
+except PintException as e:
+    line = program.split('\n')[e.line - 1]
+    print(f"{e}\n{PintException.format_error_line(line, e.column - 1, e.symbol)}")
+    exit()
+except Exception as e:
+    print(e)
+    exit()
 
 if output_file:
     with open(output_file, 'w', encoding="utf8") as f:

@@ -1,5 +1,6 @@
 from ply.lex import lex
 from ply.yacc import yacc
+from utils import PintException
 
 # --- Tokenizer ---
 
@@ -156,10 +157,11 @@ def t_error(t):
     last_cr = t.lexer.lexdata.rfind("\n", 0, t.lexpos)
     if last_cr < 0:
         last_cr = 0
-    column = (t.lexpos - last_cr) + 1
-    raise Exception(
-        f"Illegal character {t.value[0]!r} at line {t.lexer.lineno}, column {column}."
-    )
+    column = (t.lexpos - last_cr)
+    # raise Exception(
+    #     f"Illegal character {t.value[0]!r} at line {t.lexer.lineno}, column {column}."
+    # )
+    raise PintException("Illegal character", t.lexer.lineno, column, t.value[0])
 
 
 # Build the lexer object
@@ -1054,7 +1056,11 @@ def p_subscript_expression(p):
 
 
 def p_error(p):
-    raise Exception(f"Syntax error at {p.value!r}, line {p.lineno}, you 🤡!")
+    last_cr = p.lexer.lexdata.rfind("\n", 0, p.lexpos)
+    if last_cr < 0:
+        last_cr = 0
+    column = (p.lexpos - last_cr)
+    raise PintException("Syntax error", p.lineno, column, p.value)
 
 
 # uncomment to see the tokens (error messages in parsing don't work properly then)

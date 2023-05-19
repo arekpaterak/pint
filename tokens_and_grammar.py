@@ -694,13 +694,10 @@ class Class:
 #     class_definition : CLASS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
 #                      | CLASS IDENTIFIER INHERITS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
 #     """
-#     # flag = False
 
 #     if not p[2] in types.keys():
 #         types.update({p[2]: p[2]})
 #     else:
-#         flag = True
-#         # raise PintException("Definition error", f"Class \"{p[2]}\" already defined", p.lexer.lineno-1, 1, None)
 #         # raise Exception(f"Class {p[2]} already defined")
 
 #     # if len(p) == 8:
@@ -720,9 +717,6 @@ class Class:
 #             cls.name = p[2]
 #             classes.append(cls)
 #             p[0] = f"class {p[2]}:\n{indent(str(cls))}\n"
-
-#     # if flag:
-#     #     raise DefinitionError("Definition error", f"Class \"{p[2]}\" already defined", p.lexer.lineno-1, 1, p[0])
     
 
 def p_class_definition(p):

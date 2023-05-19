@@ -1,0 +1,21 @@
+🏛️ Drink {
+
+    ⏺️ liters
+    🆒 fizzy
+
+    🏗️ Drink (⏺️ lit = 0.5, 🆒 fiz = ❌) {
+        🤗.liters = lit
+        🤗.fizzy = fiz
+    }
+}
+
+🏛️ Drink {
+
+    ⏺️ liters
+    🆒 fizzy
+
+    🏗️ Drink (⏺️ lit = 0.5, 🆒 fiz = ❌) {
+        🤗.liters = lit
+        🤗.fizzy = fiz
+    }
+}

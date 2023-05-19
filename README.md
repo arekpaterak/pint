@@ -4,6 +4,16 @@ A programming language brewed 🍺 with love ❤ and the finest emojis 😀
 ## The language 
 Pint is a statically typed programming language using emojis as keywords with a syntax inspired by Python (with some twists).
 
+### Examples
+
+``` pint
+💬 An infinity loop
+
+🔁 {
+    🖨️("🍺")
+}
+```
+
 ## The transpiler
 Pint's transpiler is called **Debrewer**. Its output is **Python**.
 

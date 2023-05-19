@@ -61,24 +61,4 @@ class Class:
         self.constructor = None
         self.methods: dict[str, Function] = {}
         self.cls_methods = []
-
-
-# error handling
-class PintException(Exception):
-    red_color = '\033[91m'
-    reset_color = '\033[0m'
-
-    def __init__(self, message, line, column, symbol):
-        self.message = message
-        self.line = line
-        self.column = column
-        self.symbol = symbol
-
-    def __str__(self):
-        return f"{self.red_color}{self.message}{self.reset_color}: {self.symbol} at line {self.line}, column {self.column}, you 🤡!"
-
-    @classmethod
-    def format_error_line(cls, code_line, start, symbol):
-        end = start + len(symbol)
-        formatted_message = code_line[:start] + cls.red_color + code_line[start:end] + cls.reset_color + code_line[end:]
-        return formatted_message
+    

@@ -1,6 +1,6 @@
 from ply.lex import lex
 from ply.yacc import yacc
-from utils import PintException
+from utils.errors import PintException
 
 # --- Tokenizer ---
 
@@ -22,7 +22,8 @@ tokens = (
     "BREAK", "CONTINUE", "RETURN", "PASS",
     "NEWLINE",
     "SELF",
-    "IMPORT", "FROM", "AS"
+    "IMPORT", "FROM", "AS",
+    "PRINT",
 )
 
 # Ignored characters
@@ -117,6 +118,8 @@ t_IMPORT = r"🚢"
 t_FROM = r"🏝️"
 t_AS = r"🤿"
 
+# aliases
+t_PRINT = r"🖨️"
 
 # A function can be used if there is an associated action.
 # Write the matching regex in the docstring.
@@ -161,7 +164,7 @@ def t_error(t):
     # raise Exception(
     #     f"Illegal character {t.value[0]!r} at line {t.lexer.lineno}, column {column}."
     # )
-    raise PintException("Illegal character", t.lexer.lineno, column, t.value[0])
+    raise PintException("Illegal character", "", t.lexer.lineno, column, t.value[0])
 
 
 # Build the lexer object
@@ -319,7 +322,8 @@ def p_variable_definition(p):
     """
 
     if p[2] in variables.keys():
-        raise Exception(f"Variable {p[2]} already defined")
+        # column = len(p[1]) 
+        raise PintException("Defintion error", f"Variable \"{p[2]}\" already defined", p.lexer.lineno-1, 1, None)
 
     # @TODO: Add support for type checking
 
@@ -685,31 +689,73 @@ class Class:
         return "\n".join([item for item in [cls_fields, constructor, cls_methods, methods] if item])
 
 
+# def p_class_definition(p):
+#     """
+#     class_definition : CLASS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
+#                      | CLASS IDENTIFIER INHERITS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
+#     """
+#     # flag = False
+
+#     if not p[2] in types.keys():
+#         types.update({p[2]: p[2]})
+#     else:
+#         flag = True
+#         # raise PintException("Definition error", f"Class \"{p[2]}\" already defined", p.lexer.lineno-1, 1, None)
+#         # raise Exception(f"Class {p[2]} already defined")
+
+#     # if len(p) == 8:
+#     #     p[0] = f'class {p[2]}:\n{indent(p[5])}\n'
+#     # else:
+#     #     p[0] = f'class {p[2]}({p[4]}):\n{indent(p[7])}\n'
+
+#     match p[3]:
+#         case "👨‍👦":
+#             cls: Class = p[7]
+#             cls.name = p[2]
+#             classes.append(cls)
+#             p[0] = f"class {p[2]}({p[4]}):\n{indent(str(cls))}\n"
+
+#         case _:
+#             cls: Class = p[5]
+#             cls.name = p[2]
+#             classes.append(cls)
+#             p[0] = f"class {p[2]}:\n{indent(str(cls))}\n"
+
+#     # if flag:
+#     #     raise DefinitionError("Definition error", f"Class \"{p[2]}\" already defined", p.lexer.lineno-1, 1, p[0])
+    
+
 def p_class_definition(p):
     """
-    class_definition : CLASS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
-                     | CLASS IDENTIFIER INHERITS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
+    class_definition : class_declaration LBRACE NEWLINE class_body RBRACE NEWLINE
+                     | class_declaration INHERITS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
     """
+
+    match p[2]:
+        case "👨‍👦":
+            cls: Class = p[6]
+            cls.name = p[1][1]
+            classes.append(cls)
+            p[0] = f"class {p[1][1]}({p[3]}):\n{indent(str(cls))}\n"
+
+        case _:
+            cls: Class = p[4]
+            cls.name = p[1][1]
+            classes.append(cls)
+            p[0] = f"class {p[1][1]}:\n{indent(str(cls))}\n"
+
+
+def p_class_declaration(p):
+    """
+    class_declaration : CLASS IDENTIFIER
+    """
+
     if not p[2] in types.keys():
         types.update({p[2]: p[2]})
     else:
-        raise Exception(f"Class {p[2]} already defined")
+        raise PintException("Definition error", f"Class \"{p[2]}\" already defined", p.lexer.lineno, 1, None)
 
-    # if len(p) == 8:
-    #     p[0] = f'class {p[2]}:\n{indent(p[5])}\n'
-    # else:
-    #     p[0] = f'class {p[2]}({p[4]}):\n{indent(p[7])}\n'
-
-    if len(p) == 8:
-        cls = p[5]
-        cls.name = p[2]
-        classes.append(cls)
-        p[0] = f"class {p[2]}:\n{indent(str(cls))}\n"
-    else:
-        cls = p[7]
-        cls.name = p[2]
-        classes.append(cls)
-        p[0] = f"class {p[2]}({p[4]}):\n{indent(str(cls))}\n"
+    p[0] = (p[1], p[2])
 
 
 def p_class_body(p):
@@ -961,10 +1007,13 @@ def p_call(p):
          | SET LPAREN arguments RPAREN
          | TUPLE LPAREN arguments RPAREN
          | DICT LPAREN items RPAREN
+         | PRINT LPAREN arguments RPAREN
     """
     if p[1] in types.keys():
         # @TODO Match types
         p[0] = f"{types[p[1]]}({p[3]})"
+    elif p[1] == "🖨️":
+        p[0] = f"print({p[3]})"
     else:
         p[0] = f"{p[1]}({p[3]})"
 
@@ -1060,7 +1109,8 @@ def p_error(p):
     if last_cr < 0:
         last_cr = 0
     column = (p.lexpos - last_cr)
-    raise PintException("Syntax error", p.lineno, column, p.value)
+
+    raise PintException("Syntax error", "", p.lineno, column, p.value)
 
 
 # uncomment to see the tokens (error messages in parsing don't work properly then)

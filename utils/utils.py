@@ -1,24 +1,17 @@
 from typing import Any
 
-spacing = 4*' '
-
-emoji_operators = {
-        '🐜': '<',
-        '🐜⚖️': '<=',
-        '🐘': '>',
-        '🐘⚖️': '>=',
-        '⚖️': '=='
-    }
-
-
-def indent(lines):
-    lines = lines.split('\n')
-    lines = [spacing + line for line in lines]
-    lines = '\n'.join(lines)
-    return lines
-
 
 class Program:
+    spacing = 4*' '
+
+    emoji_operators = {
+            '🐜': '<',
+            '🐜⚖️': '<=',
+            '🐘': '>',
+            '🐘⚖️': '>=',
+            '⚖️': '=='
+        }
+
     def __init__(self, types: dict[str, str] = {}):
         self.types = types
         self.classes = {}
@@ -29,6 +22,13 @@ class Program:
         else:
             args = [self.get_type(t) for t in type_[1:] if t not in ('<', '>', ' ', ',')]
             return f'{self.types[type_[0]]}[{", ".join(args)}]'
+        
+    @classmethod
+    def indent(cls, lines):
+        lines = lines.split('\n')
+        lines = [cls.spacing + line for line in lines]
+        lines = '\n'.join(lines)
+        return lines
 
 
 class Scope:

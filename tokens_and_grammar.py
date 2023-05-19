@@ -721,8 +721,8 @@ class Class:
 
 def p_class_definition(p):
     """
-    class_definition : class_declaration LBRACE NEWLINE class_body RBRACE NEWLINE
-                     | class_declaration INHERITS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
+    class_definition : class_naming LBRACE NEWLINE class_body RBRACE NEWLINE
+                     | class_naming INHERITS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
     """
 
     match p[2]:
@@ -739,9 +739,9 @@ def p_class_definition(p):
             p[0] = f"class {p[1][1]}:\n{indent(str(cls))}\n"
 
 
-def p_class_declaration(p):
+def p_class_naming(p):
     """
-    class_declaration : CLASS IDENTIFIER
+    class_naming : CLASS IDENTIFIER
     """
 
     if not p[2] in types.keys():

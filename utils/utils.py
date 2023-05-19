@@ -32,11 +32,27 @@ class Program:
 
 
 class Scope:
-    def __init__(self, parent: 'Scope' = None):
+    def __init__(self, name: str, parent: 'Scope' = None):
+        self.name: str = name if parent is None else f'{parent.name}.{name}'
         self.parent: 'Scope' = parent
         self.variables: dict[str, Variable] = {}
         self.functions: dict[str, Function] = {}
 
+    def contains_variable(self, name: str):
+        if name in self.variables:
+            return True
+        elif self.parent is not None:
+            return self.parent.contains_variable(name)
+        else:
+            return False
+
+    def contains_function(self, name: str):
+        if name in self.functions:
+            return True
+        elif self.parent is not None:
+            return self.parent.contains_function(name)
+        else:
+            return False
 
 class Variable:
     def __init__(self, name: str, type: str, value: Any = None):

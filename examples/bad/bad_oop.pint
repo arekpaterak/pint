@@ -1,0 +1,54 @@
+🏛️ Drink {
+
+    ⏺️ liters
+    🆒 fizzy
+    🆒 fizzy
+
+    🏗️ Drink (⏺️ lit = 0.5, 🆒 fiz = ❌) {
+        🤗.liters = lit
+        🤗.fizzy = fiz
+    }
+
+    🏛️ 🍺 getDescription() -> 🔠 {
+        🍺 insideFunc1() -> 🔠 {
+            🍺 duplicate() -> 🔠 {
+                🦞 "Not brilliant drink"
+            }
+            🍺 duplicate() -> 🔠 {
+                🦞 "Not brilliant drink"
+            }
+            🦞 "Not brilliant drink"
+        }
+        🦞 "Brilliant drink"
+    }
+
+    🏛️ 🍺 getDescription() -> 🔠 {
+        🦞 "Not brilliant drink"
+    }
+}
+
+
+🏛️ Beer 👨‍👦 Drink {
+
+    🔢 percents
+
+    🏗️ Beer (🔢 perc = 5, ⏺️ lit = 0.5, 🆒 fiz = ❌) {
+        👨‍👦(lit, fiz)
+        🤗.percents = perc
+    }
+
+    🍺 getPercents() -> 🔢 {
+        🦞 🤗.percents
+    }
+
+    🍺 getNothing() -> 🌌 {
+        🦞 🌌
+    }
+}
+
+
+Beer bgh = Beer(6, 0.499)
+bgh.getDescription()
+
+💬 improve regular beer
+bgh.percents = bgh.percents + 1

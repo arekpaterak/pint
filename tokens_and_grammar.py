@@ -1,6 +1,7 @@
 from ply.lex import lex
 from ply.yacc import yacc
 from utils.errors import PintException
+from utils.utils import *
 
 # --- Tokenizer ---
 
@@ -161,9 +162,6 @@ def t_error(t):
     if last_cr < 0:
         last_cr = 0
     column = (t.lexpos - last_cr)
-    # raise Exception(
-    #     f"Illegal character {t.value[0]!r} at line {t.lexer.lineno}, column {column}."
-    # )
     raise PintException("Illegal character", "", t.lexer.lineno, column, t.value[0])
 
 
@@ -189,12 +187,7 @@ types = {
 
 emoji_operators = {"🐜": "<", "🐜⚖️": "<=", "🐘": ">", "🐘⚖️": ">=", "⚖️": "=="}
 
-
-class Variable:
-    def __init__(self, name, value, type):
-        self.name = name
-        self.value = value
-        self.type = type
+current_scope = Scope("global", None)
 
 
 def indent(lines):
@@ -320,14 +313,14 @@ def p_variable_definition(p):
     variable_definition : type IDENTIFIER ASSIGN expression NEWLINE
                         | type IDENTIFIER ASSIGN expression oneline_comment
     """
-
-    if p[2] in variables.keys():
-        # column = len(p[1]) 
-        raise PintException("Defintion error", f"Variable \"{p[2]}\" already defined", p.lexer.lineno-1, 1, None)
-
     # @TODO: Add support for type checking
 
-    variables[p[2]] = Variable(p[2], p[4], p[1])
+    global current_scope
+
+    if current_scope.contains_variable(p[2]):
+        raise PintException("Definition error", f"Variable \"{p[2]}\" already defined in scope {current_scope.name}", p.lexer.lineno - 1, 1, None)
+    else:
+        current_scope.variables[p[2]] = Variable(p[2], p[1], p[4])
 
     match p[-1]:
         case "\n":
@@ -339,10 +332,31 @@ def p_variable_definition(p):
 # FUNCTION DEFINITION
 def p_function_definition(p):
     """
-    function_definition : FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW type LBRACE NEWLINE function_body RBRACE NEWLINE
-                        | FUNCTION IDENTIFIER LPAREN parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
+    function_definition : function_naming LPAREN parameters RPAREN RETURNARROW type LBRACE NEWLINE function_body RBRACE NEWLINE
+                        | function_naming LPAREN parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
     """
-    p[0] = f"def {p[2]}({p[4]}) -> {p[7].replace('🌌', 'None')}:\n{indent(p[10])}\n"
+    global current_scope
+
+    current_scope = current_scope.parent
+
+    current_scope.functions[p[1].name].parameters = p[3]
+    current_scope.functions[p[1].name].return_type = p[6]
+    current_scope.functions[p[1].name].body = p[9]
+
+    p[0] = f"def {p[1].name}({p[3]}) -> {p[6].replace('🌌', 'None')}:\n{indent(p[9])}\n"
+
+
+def p_function_naming(p):
+    """
+    function_naming : FUNCTION IDENTIFIER
+    """
+    global current_scope
+
+    if current_scope.contains_function(p[2]):
+        raise PintException("Definition error", f"Function \"{p[2]}\" already defined in scope {current_scope.name}", p.lexer.lineno, 1, None)
+    else:
+        current_scope.functions[p[2]] = p[0] = Function(p[2], None, None, None)
+        current_scope = Scope(p[2], current_scope)
 
 
 def p_function_body(p):
@@ -399,20 +413,34 @@ def p_assignment_statement(p):
                          | compound_identifier assign expression oneline_comment
                          | subscript_expression assign expression oneline_comment
     """
-    # if p[1] not in variables.keys():
-    #     raise Exception(f'Variable {p[1]} not defined')
-
     # @TODO: Add support for type checking
-    # if not isinstance(p[3], variables[p[1]].type):
-    #     raise Exception(f'Variable {p[1]} type mismatch')
 
-    # variables[p[1]].value = p[3]
+    global current_scope
+
+    variable_basename = (
+        p[1].split(".")[0] if "." in p[1] and not "self" in p[1]
+        else p[1].split(".")[1] if "." in p[1]  
+        else p[1].split("[")[0] if "[" in p[1] 
+        else p[1]
+    )
+
+    if not current_scope.contains_variable(variable_basename):
+        raise PintException(
+            "Assignment error", 
+            f"Variable \"{variable_basename}\" not defined", 
+            p.lexer.lineno - 1, 
+            1, 
+            None
+        )
+    
+    # @TODO: compound identifiers in scope? value update? is keeping track of variable value necessary? 
     
     match p[-1]:
         case "\n":
             p[0] = f"{p[1]} {p[2]} {p[3]}\n"
         case _:
             p[0] = f"{p[1]} {p[2]} {p[3]} {p[4]}"
+
 
 def p_assign(p):
     """
@@ -651,6 +679,9 @@ def p_simple_parameter(p):
     """
     simple_parameter : type IDENTIFIER
     """
+    global current_scope
+
+    current_scope.variables[p[2]] = Variable(p[2], p[1])
     p[0] = f"{p[2]}: {p[1]}"
 
 
@@ -658,6 +689,9 @@ def p_default_parameter(p):
     """
     default_parameter : type IDENTIFIER ASSIGN expression
     """
+    global current_scope
+
+    current_scope.variables[p[2]] = Variable(p[2], p[1], p[4])
     p[0] = f"{p[2]}: {p[1]} = {p[4]}"
 
 
@@ -724,6 +758,7 @@ def p_class_definition(p):
     class_definition : class_naming LBRACE NEWLINE class_body RBRACE NEWLINE
                      | class_naming INHERITS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
     """
+    global current_scope
 
     match p[2]:
         case "👨‍👦":
@@ -738,14 +773,18 @@ def p_class_definition(p):
             classes.append(cls)
             p[0] = f"class {p[1][1]}:\n{indent(str(cls))}\n"
 
+    current_scope = current_scope.parent
+
 
 def p_class_naming(p):
     """
     class_naming : CLASS IDENTIFIER
     """
+    global current_scope
 
     if not p[2] in types.keys():
         types.update({p[2]: p[2]})
+        current_scope = Scope(p[2], current_scope)
     else:
         raise PintException("Definition error", f"Class \"{p[2]}\" already defined", p.lexer.lineno, 1, None)
 
@@ -822,12 +861,17 @@ def p_field_declaration(p):
     field_declaration : type IDENTIFIER NEWLINE
                       | CLASS type IDENTIFIER NEWLINE
     """
-
-    # current_class = classes[-1]
+    global current_scope
 
     match p[1:]:
         case [_, _, _]:
-            identifier = p[2]
+            if current_scope.contains_variable(p[2]):
+                raise PintException("Definition error", f"Field \"{p[2]}\" already defined in scope {current_scope.name}", p.lexer.lineno - 2, 1, None)
+            else:
+                current_scope.variables[p[2]] = Variable(p[2], p[1], None)
+                p[0] = Field(p[2], p[1])
+
+            # identifier = p[2]
 
             # if identifier in current_class.fields.keys():
             #     raise Exception(f'Field {identifier} already defined')
@@ -835,9 +879,15 @@ def p_field_declaration(p):
             # field = Variable(identifier, None, p[1])
             # current_class.fields[identifier] = field
 
-            p[0] = Field(identifier, p[1])
+            # p[0] = Field(identifier, p[1])
+
         case ["🏛️", _, _, _]:
-            identifier = p[3]
+            if current_scope.contains_variable(p[3]):
+                raise PintException("Definition error", f"Field \"{p[3]}\" already defined in scope {current_scope.name}", p.lexer.lineno, 1, None)
+            else:
+                current_scope.variables[p[3]] = current_scope.variables[f"self.{p[3]}"] = Variable(p[3], p[2], None)
+                p[0] = Field(p[3], p[2], True)
+            # identifier = p[3]
 
             # if identifier in current_class.cls_fields.keys():
             #     raise Exception(f'Field {identifier} already defined')
@@ -847,7 +897,7 @@ def p_field_declaration(p):
 
             # p[0] = f'{identifier}: {p[2]}\n'
 
-            p[0] = Field(identifier, p[2], True)
+            # p[0] = Field(identifier, p[2], True)
 
 
 # CONSTRUCTOR
@@ -867,6 +917,7 @@ def p_constructor_definition(p):
     constructor_definition : CONSTRUCTOR IDENTIFIER LPAREN class_parameters RPAREN LBRACE NEWLINE function_body RBRACE NEWLINE
                            | empty
     """
+    # @TODO constructor scope
     if len(p) > 2:
         # p[0] = f"def __init__({p[4]}):\n{indent(p[8])}\n"
         p[0] = Constructor(p[4], p[8])
@@ -916,22 +967,52 @@ def p_methods_definitions(p):
 
 def p_method_definition(p):
     """
-    method_definition : FUNCTION IDENTIFIER LPAREN class_parameters RPAREN RETURNARROW type LBRACE NEWLINE function_body RBRACE NEWLINE
-                      | CLASS FUNCTION IDENTIFIER LPAREN class_parameters RPAREN RETURNARROW type LBRACE NEWLINE function_body RBRACE NEWLINE
-                      | FUNCTION IDENTIFIER LPAREN class_parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
-                      | CLASS FUNCTION IDENTIFIER LPAREN class_parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
+    method_definition : method_naming LPAREN class_parameters RPAREN RETURNARROW type LBRACE NEWLINE function_body RBRACE NEWLINE
+                      | method_naming LPAREN class_parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
     """
-    # p[0] = ' '.join(p[1:])
+    global current_scope
 
-    match p[1], p[7]:
-        case ["🏛️", "🌌"]:
-            p[0] = Method(p[3], p[5], "None", p[11], True)
-        case ["🏛️", _]:
-            p[0] = Method(p[3], p[5], p[8], p[11], True)
-        case [_, "🌌"]:
-            p[0] = Method(p[2], p[4], "None", p[10])
+    is_cls_method = p[1].is_cls_method 
+    name = p[1].name
+    type = p[6].replace("🌌", "None")
+
+    # match p[6]:
+    #     case "🌌":
+    #         m = Method(name, p[3], "None", p[9], is_cls_method)
+    #         # p[0] = m
+
+    #     case _:
+    #         m = Method(name, p[3], p[6], p[9], is_cls_method)
+    #         # p[0] = m
+
+    p[0] = current_scope.functions[name] = Method(name, p[3], type, p[9], is_cls_method)
+    current_scope = current_scope.parent
+
+
+def p_method_naming(p):
+    """
+    method_naming : FUNCTION IDENTIFIER
+                  | CLASS FUNCTION IDENTIFIER
+    """
+    global current_scope
+
+    match p[1:]:
         case [_, _]:
-            p[0] = Method(p[2], p[4], p[7], p[10])
+            if current_scope.contains_function(p[2]):
+                raise PintException("Definition error", f"Method \"{p[2]}\" already defined in scope {current_scope.name}", p.lexer.lineno, 1, None)
+            else:
+                m = Method(p[2], None, None, None)
+                current_scope.functions[p[2]] = m
+                current_scope = Scope(p[2], current_scope)
+        case _:
+            if current_scope.contains_function(p[3]):
+                raise PintException("Definition error", f"Method \"{p[3]}\" already defined in scope {current_scope.name}", p.lexer.lineno, 1, None)
+            else:
+                m = Method(p[3], None, None, None, True)
+                current_scope.functions[p[3]] = m
+                current_scope = Scope(p[3], current_scope)
+
+    p[0] = m
 
 
 def p_expression(p):

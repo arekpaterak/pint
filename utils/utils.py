@@ -54,6 +54,7 @@ class Scope:
         else:
             return False
 
+
 class Variable:
     def __init__(self, name: str, type: str, value: Any = None):
         self.name: str = name
@@ -77,4 +78,5 @@ class Class:
         self.constructor = None
         self.methods: dict[str, Function] = {}
         self.cls_methods = []
+        self.parent = None
     

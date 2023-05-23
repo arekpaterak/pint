@@ -920,7 +920,7 @@ class Constructor:
 
 def p_constructor_definition(p):
     """
-    constructor_definition : constructor_naming LPAREN class_parameters RPAREN LBRACE NEWLINE function_body RBRACE NEWLINE
+    constructor_definition : constructor_naming LPAREN class_parameters RPAREN LBRACE NEWLINE constructor_body RBRACE NEWLINE
                            | empty
     """
     # @TODO constructor scope

@@ -14,10 +14,14 @@ Pint is a statically typed programming language using emojis as keywords with a 
 }
 ```
 
+
 ## The transpiler
 Pint's transpiler is called **Debrewer**. Its output is **Python**.
 
 It is implemented in **Python** and uses **PLY** (Python Lex-Yacc) to tokenize and parse the input file.
+
+### File extensions
+The transpiler supports files with the `.pint` or `.🍺` extension.
 
 ### How to use
 To transpile a Pint file to python, run `python debrewer.py <input> [-o <output>] [-t]`. 

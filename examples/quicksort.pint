@@ -1,5 +1,5 @@
 💬 function to perform quicksort
-🍺 quickSort(🐍<🔢> array, 🔢 low, 🔢 high) -> 🐍<🔢> {
+🍺 quickSort(🐍<🔢> array, 🔢 low, 🔢 high) -> 🌌 {
     🍃 (low 🐜 high) {
         💬⬇️ 
         Find pivot element such that

@@ -1,6 +1,7 @@
 class DebrewerException(Exception):
     yellow_color = '\033[93m'
     reset_color = '\033[0m'
+    green_color = '\033[92m'
 
     def __init__(self, message):
         self.message = message
@@ -52,3 +53,16 @@ class PintException(Exception):
         output.append(cls.congratulations)
 
         print("\n".join(output))
+
+
+class MyPyError(Exception):
+    red_color = '\033[91m'
+    reset_color = '\033[0m'
+    congratulations = "Congratulations, you 🤡!"
+
+    def __init__(self, category, message):
+        self.category = category
+        self.message = message
+
+    def __str__(self):
+        return f"{self.red_color}{self.category}{self.reset_color}: {self.message}"

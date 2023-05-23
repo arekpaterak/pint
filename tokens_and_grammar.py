@@ -1,5 +1,6 @@
 from ply.lex import lex
 from ply.yacc import yacc
+
 from utils.errors import PintException
 from utils.utils import *
 
@@ -27,7 +28,7 @@ tokens = (
     "PRINT",
 )
 
-# Ignored characters
+# Ignored characters - spaces and tabs
 t_ignore = " \t"
 
 # Token matching rules are written as regexs
@@ -162,11 +163,13 @@ def t_error(t):
     if last_cr < 0:
         last_cr = 0
     column = (t.lexpos - last_cr)
+
     raise PintException("Illegal character", "", t.lexer.lineno, column, t.value[0])
 
 
 # Build the lexer object
 lexer = lex()
+
 
 # --- Parser ---
 
@@ -294,7 +297,9 @@ def p_types(p):
     types : types COMMA type
           | type
     """
-    p[0] = p[1] if len(p) == 2 else ", ".join(p[1:])
+    # p[0] = p[1] if len(p) == 2 else ", ".join(p[1:])
+    # p[0] = p[1] if len(p) == 2 else " ".join(p[1:])
+    p[0] = str(p[1]) + ", " + str(p[3]) if len(p) > 2 else str(p[1])
 
 
 # DEFINITION
@@ -940,6 +945,21 @@ def p_constructor_naming(p):
     p[0] = " ".join(p[1:])
 
 
+def p_constructor_body(p):
+    """
+    constructor_body : function_body
+                     | function_body super_init_call function_body
+    """
+    p[0] = "".join(p[1:])
+
+
+def p_super_init_call(p):
+    """
+    super_init_call : INHERITS LPAREN arguments RPAREN
+    """
+    p[0] = f"super().__init__({p[3]})"
+
+
 # METHODS
 
 
@@ -1099,13 +1119,30 @@ def p_call(p):
          | DICT LPAREN items RPAREN
          | PRINT LPAREN arguments RPAREN
     """
-    if p[1] in types.keys():
-        # @TODO Match types
-        p[0] = f"{types[p[1]]}({p[3]})"
-    elif p[1] == "🖨️":
-        p[0] = f"print({p[3]})"
-    else:
-        p[0] = f"{p[1]}({p[3]})"
+    # if p[1] in types.keys():
+    #     # @TODO Match types
+    #     if p[1] == "🐍":
+    #         p[0] = f"[{p[3]}]"
+    #     else:
+    #         p[0] = f"{types[p[1]]}({p[3]})"
+    # elif p[1] == "🖨️":
+    #     p[0] = f"print({p[3]})"
+    # else:
+    #     p[0] = f"{p[1]}({p[3]})"
+
+    match p[1]:
+        case "🐍":
+            p[0] = f"[{p[3]}]"
+        case "🗺️":
+            p[0] = f"{{{p[3]}}}"
+        case "🗑️":
+            p[0] = f"{{{p[3]}}}"
+        case "🌼":
+            p[0] = f"({p[3]})"
+        case "🖨️":
+            p[0] = f"print({p[3]})"
+        case _:
+            p[0] = f"{p[1]}({p[3]})"
 
 
 def p_items(p):
@@ -1129,8 +1166,7 @@ def p_compound_identifier(p):
     compound_identifier : compound_identifier DOT IDENTIFIER
                         | IDENTIFIER
                         | SELF DOT IDENTIFIER
-                        | INHERITS DOT IDENTIFIER
-                        | INHERITS
+                        
     """
     match p[1:]:
         case ["🤗", _, _]:

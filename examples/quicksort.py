@@ -1,5 +1,5 @@
 # function to perform quicksort
-def quickSort(array: list[int], low: int, high: int) -> list[int]:
+def quickSort(array: list[int], low: int, high: int) -> None:
     if low < high:
         # Find pivot element such that
         # element smaller than pivot are on the left
@@ -40,7 +40,7 @@ def partition(array: list[int], low: int, high: int) -> int:
     # Return the position from where partition is done
     return i + 1
 
-data: list[int] = list(1, 7, 4, 1, 10, 9, -2)
+data: list[int] = [1, 7, 4, 1, 10, 9, -2]
 print("Unsorted Array")
 print(data)
 

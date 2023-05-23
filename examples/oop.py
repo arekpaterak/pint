@@ -10,7 +10,7 @@ class Drink:
 
 class Beer(Drink):
     def __init__(self, perc: int = 5, lit: float = 0.5, fiz: bool = False):
-        super(lit, fiz)
+        super().__init__(lit, fiz)
         self.percents = perc
     
     def getPercents(self) -> int:

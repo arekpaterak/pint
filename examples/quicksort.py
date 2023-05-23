@@ -33,7 +33,7 @@ def partition(array: list[int], low: int, high: int) -> int:
             array[i] = temp
     
     # Swap the pivot element with the greater element specified by i
-    temp = array[i + 1] 
+    temp: int = array[i + 1] 
     array[i + 1] = array[high] 
     array[high] = temp 
     

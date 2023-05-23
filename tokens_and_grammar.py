@@ -565,23 +565,53 @@ def p_loop_statement(p):
 # WHILE, INFINITE LOOP
 def p_while_statement(p):
     """
-    while_statement : LOOP LPAREN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
-                    | LOOP LBRACE NEWLINE statements RBRACE NEWLINE
+    while_statement : loop_beginning LPAREN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
+                    | loop_beginning LBRACE NEWLINE statements RBRACE NEWLINE
     """
+    global current_scope
+
     statements = p[7] if len(p) == 10 else p[4]
     statements = indent(statements)
 
     condition = p[3] if len(p) == 10 else "True"
 
+    current_scope = current_scope.parent
+
     p[0] = f"while {condition}:\n{statements}\n"
+
+
+def p_loop_beginning(p):
+    """
+    loop_beginning : LOOP
+    """
+    global current_scope
+
+    current_scope = Scope("loop", current_scope)
+
+    p[0] = p[1]
 
 
 # FOR
 def p_for_statement(p):
     """
-    for_statement : LOOP LPAREN type IDENTIFIER ASSIGN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE
+    for_statement : for_beginning LBRACE NEWLINE definitions_and_statements RBRACE NEWLINE
     """
-    p[0] = f"for {p[4]} in {p[6]}:\n{indent(p[10])}\n"
+    global current_scope
+
+    current_scope = current_scope.parent
+
+    p[0] = f"{p[1]}\n{indent(p[4])}\n"
+
+
+def p_for_beginning(p):
+    """
+    for_beginning : loop_beginning LPAREN type IDENTIFIER ASSIGN expression RPAREN
+    """
+    global current_scope
+
+    current_scope.variables[p[4]] = Variable(p[4], p[3])
+
+    p[0] = f"for {p[4]} in {p[6]}:"
 
 
 # CONTINUE, BREAK, PASS
@@ -795,11 +825,6 @@ def p_class_body(p):
     """
     class_body : nonexecutables fields_declarations nonexecutables constructor_definition nonexecutables methods_definitions nonexecutables
     """
-
-    # TODO: Create a Class here
-
-    # p[0] = ''.join(p[1:])
-
     def split_list_by(l, p):
         yes, no = [], []
         for i in l:
@@ -834,9 +859,6 @@ def p_fields_declarations(p):
                         | field_declaration
                         | empty
     """
-
-    # p[0] = ''.join(p[1:])
-
     match p[1:]:
         case [_, _, _]:
             p[0] = [*p[1], p[3]]
@@ -864,40 +886,19 @@ def p_field_declaration(p):
     global current_scope
 
     match p[1:]:
+        case ["🏛️", _, _, _]:
+            if current_scope.contains_variable(p[3]):
+                raise PintException("Definition error", f"Field \"{p[3]}\" already defined in scope {current_scope.name}", p.lexer.lineno, 1, None)
+            else:
+                current_scope.variables[p[3]] = Variable(p[3], p[2], None)
+                p[0] = Field(p[3], p[2], True)
+        
         case [_, _, _]:
             if current_scope.contains_variable(p[2]):
                 raise PintException("Definition error", f"Field \"{p[2]}\" already defined in scope {current_scope.name}", p.lexer.lineno - 2, 1, None)
             else:
                 current_scope.variables[p[2]] = Variable(p[2], p[1], None)
                 p[0] = Field(p[2], p[1])
-
-            # identifier = p[2]
-
-            # if identifier in current_class.fields.keys():
-            #     raise Exception(f'Field {identifier} already defined')
-
-            # field = Variable(identifier, None, p[1])
-            # current_class.fields[identifier] = field
-
-            # p[0] = Field(identifier, p[1])
-
-        case ["🏛️", _, _, _]:
-            if current_scope.contains_variable(p[3]):
-                raise PintException("Definition error", f"Field \"{p[3]}\" already defined in scope {current_scope.name}", p.lexer.lineno, 1, None)
-            else:
-                current_scope.variables[p[3]] = current_scope.variables[f"self.{p[3]}"] = Variable(p[3], p[2], None)
-                p[0] = Field(p[3], p[2], True)
-            # identifier = p[3]
-
-            # if identifier in current_class.cls_fields.keys():
-            #     raise Exception(f'Field {identifier} already defined')
-
-            # cls_field = Variable(identifier, None, p[2])
-            # current_class.cls_fields[identifier] = cls_field
-
-            # p[0] = f'{identifier}: {p[2]}\n'
-
-            # p[0] = Field(identifier, p[2], True)
 
 
 # CONSTRUCTOR
@@ -914,15 +915,29 @@ class Constructor:
 
 def p_constructor_definition(p):
     """
-    constructor_definition : CONSTRUCTOR IDENTIFIER LPAREN class_parameters RPAREN LBRACE NEWLINE function_body RBRACE NEWLINE
+    constructor_definition : constructor_naming LPAREN class_parameters RPAREN LBRACE NEWLINE function_body RBRACE NEWLINE
                            | empty
     """
     # @TODO constructor scope
     if len(p) > 2:
-        # p[0] = f"def __init__({p[4]}):\n{indent(p[8])}\n"
-        p[0] = Constructor(p[4], p[8])
+        global current_scope
+
+        current_scope = current_scope.parent
+
+        p[0] = Constructor(p[3], p[7])
     else:
         p[0] = ""
+
+
+def p_constructor_naming(p):
+    """
+    constructor_naming : CONSTRUCTOR IDENTIFIER
+    """
+    global current_scope
+
+    current_scope = Scope("constructor", current_scope)
+
+    p[0] = " ".join(p[1:])
 
 
 # METHODS

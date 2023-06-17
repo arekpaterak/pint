@@ -1,0 +1,17 @@
+🔢 i = 1
+
+🍃 (i 🐘 10) {
+    print("if")
+}
+
+🌲 (i) {
+    🍃 (10) {
+        print("case")
+    }
+    🍃 (0) {
+        print("another case")
+    }
+    🍂 {
+        print("default")
+    }
+}

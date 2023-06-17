@@ -318,8 +318,6 @@ def p_variable_definition(p):
     variable_definition : type IDENTIFIER ASSIGN expression NEWLINE
                         | type IDENTIFIER ASSIGN expression oneline_comment
     """
-    # @TODO: Add support for type checking
-
     global current_scope
 
     if current_scope.contains_variable(p[2]):
@@ -418,8 +416,6 @@ def p_assignment_statement(p):
                          | compound_identifier assign expression oneline_comment
                          | subscript_expression assign expression oneline_comment
     """
-    # @TODO: Add support for type checking
-
     global current_scope
 
     variable_basename = (
@@ -533,7 +529,7 @@ def p_match_statement(p):
     """
     match_statement : TREE LPAREN compound_identifier RPAREN LBRACE NEWLINE match_cases match_default RBRACE NEWLINE
     """
-    pass
+    p[0] = f"match {p[3]}:\n{indent(p[7])}\n{indent(p[8])}\n"
 
 
 def p_match_cases(p):
@@ -541,21 +537,31 @@ def p_match_cases(p):
     match_cases : match_cases match_case
                 | match_case
     """
-    pass
+    p[0] = "".join(p[1:])
 
 
 def p_match_case(p):
     """
-    match_case : LEAF LPAREN expression RPAREN LBRACE statements RBRACE NEWLINE
+    match_case : LEAF LPAREN expression RPAREN LBRACE case_body RBRACE NEWLINE
     """
-    pass
+    p[0] = f"case {p[3]}:\n{indent(p[6])}\n"
 
 
 def p_match_default(p):
     """
-    match_default : FALLENLEAF LBRACE statements RBRACE NEWLINE
+    match_default : FALLENLEAF LBRACE case_body RBRACE NEWLINE
     """
-    pass
+    p[0] = f"case _:\n{indent(p[3])}\n"
+
+
+def p_case_body(p):
+    """
+    case_body : case_body statement nonexecutables
+              | case_body variable_definition nonexecutables
+              | nonexecutables
+              | empty
+    """
+    p[0] = "".join(p[1:])
 
 
 # LOOP
@@ -756,36 +762,6 @@ class Class:
         methods = "\n".join(map(str, self.methods))
 
         return "\n".join([item for item in [cls_fields, constructor, cls_methods, methods] if item])
-
-
-# def p_class_definition(p):
-#     """
-#     class_definition : CLASS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
-#                      | CLASS IDENTIFIER INHERITS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
-#     """
-
-#     if not p[2] in types.keys():
-#         types.update({p[2]: p[2]})
-#     else:
-#         # raise Exception(f"Class {p[2]} already defined")
-
-#     # if len(p) == 8:
-#     #     p[0] = f'class {p[2]}:\n{indent(p[5])}\n'
-#     # else:
-#     #     p[0] = f'class {p[2]}({p[4]}):\n{indent(p[7])}\n'
-
-#     match p[3]:
-#         case "👨‍👦":
-#             cls: Class = p[7]
-#             cls.name = p[2]
-#             classes.append(cls)
-#             p[0] = f"class {p[2]}({p[4]}):\n{indent(str(cls))}\n"
-
-#         case _:
-#             cls: Class = p[5]
-#             cls.name = p[2]
-#             classes.append(cls)
-#             p[0] = f"class {p[2]}:\n{indent(str(cls))}\n"
     
 
 def p_class_definition(p):
@@ -989,8 +965,6 @@ def p_methods_definitions(p):
                         | method_definition
                         | empty
     """
-    # p[0] = ''.join(p[1:])
-
     match p[1:]:
         case [_, _, _]:
             p[0] = [*p[1], p[3]]
@@ -1010,15 +984,6 @@ def p_method_definition(p):
     is_cls_method = p[1].is_cls_method 
     name = p[1].name
     type = p[6].replace("🌌", "None")
-
-    # match p[6]:
-    #     case "🌌":
-    #         m = Method(name, p[3], "None", p[9], is_cls_method)
-    #         # p[0] = m
-
-    #     case _:
-    #         m = Method(name, p[3], p[6], p[9], is_cls_method)
-    #         # p[0] = m
 
     p[0] = current_scope.functions[name] = Method(name, p[3], type, p[9], is_cls_method)
     current_scope = current_scope.parent
@@ -1060,7 +1025,6 @@ def p_expression(p):
                | identifier_expression
                | subscript_expression
     """
-    # TODO split into categories: expressions should be less ambiguous, e.g. if statement should accept only boolean expressions 
     p[0] = p[1] if len(p) == 2 else p[2]
 
 
@@ -1119,17 +1083,6 @@ def p_call(p):
          | DICT LPAREN items RPAREN
          | PRINT LPAREN arguments RPAREN
     """
-    # if p[1] in types.keys():
-    #     # @TODO Match types
-    #     if p[1] == "🐍":
-    #         p[0] = f"[{p[3]}]"
-    #     else:
-    #         p[0] = f"{types[p[1]]}({p[3]})"
-    # elif p[1] == "🖨️":
-    #     p[0] = f"print({p[3]})"
-    # else:
-    #     p[0] = f"{p[1]}({p[3]})"
-
     match p[1]:
         case "🐍":
             p[0] = f"[{p[3]}]"
@@ -1177,13 +1130,6 @@ def p_compound_identifier(p):
             p[0] = "super"
         case _:
             p[0] = "".join(p[1:])
-
-
-# def p_self_identifier(p):
-#     '''
-#     self_identifier : SELF DOT IDENTIFIER
-#     '''
-#     p[0] = ''.join(p[1:])
 
 
 def p_arguments(p):

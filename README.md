@@ -7,7 +7,7 @@ Pint is a statically typed programming language using emojis as keywords with a 
 ### Examples
 
 ``` pint
-💬 An infinity loop
+💬 An infinite loop
 
 🔁 {
     🖨️("🍺")
@@ -27,7 +27,7 @@ The transpiler supports files with the `.pint` or `.🍺` extension.
 To transpile a Pint file to python, run `python debrewer.py <input> [-o <output>] [-t]`. 
 
 Without specifying flags the result will be saved in a file with the same name as the input file, but with the `.py` extension. 
-The `-o` flag specifies the output file, and the `-t` flag specifies that the output should be printed to the terminal. 
+The `-o` flag specifies the output file, and the `-t` flag specifies that the output file should be checked against typing consistency using mypy. 
 
 ### Testing
 Simple tests compare translated files to model ones from the examples directory.

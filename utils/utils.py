@@ -39,8 +39,8 @@ class Scope:
         self.functions: dict[str, Function] = {}
 
         # uncomment to see scope - tree
-        # self.level: int = 0 if parent is None else parent.level + 1
-        # print(self.level * 2 * " " + self.name)
+        # self.level: int = 1 if parent is None else parent.level + 1
+        # print("├" + self.level * 2 * "─" + " " + self.name)
 
 
     def contains_variable(self, name: str):

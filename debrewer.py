@@ -2,6 +2,7 @@ from tokens_and_grammar import lexer, parser
 from utils.errors import PintException, DebrewerException, MyPyError
 
 import sys
+from sys import exit
 import os
 
 try:

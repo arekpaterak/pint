@@ -88,12 +88,12 @@ t_GREATEREQUAL = r"🐘⚖️"
 t_EQUAL = r"⚖️"
 
 # logical operators
-t_AND = r"and"
-t_OR = r"or"
-t_NOT = r"not"
-# t_AND = r'☹️'
-# t_OR = r'🙂'
-# t_NOT = r'🙃'
+# t_AND = r"and"
+# t_OR = r"or"
+# t_NOT = r"not"
+t_AND = r'🙃'
+t_OR = r'🙂'
+t_NOT = r'😡'
 
 # data structures
 t_LIST = r"🐍"
@@ -428,8 +428,8 @@ def p_assignment_statement(p):
     if not current_scope.contains_variable(variable_basename):
         raise PintException(
             "Assignment error", 
-            f"Variable \"{variable_basename}\" not defined", 
-            p.lexer.lineno - 1, 
+            f"Variable \"{variable_basename}\" not defined in scope {current_scope.name}", 
+            p.lexer.lineno - 2, 
             1, 
             None
         )
@@ -1048,6 +1048,10 @@ def p_binary_operator(p):
     """
     if p[1] == "^":
         p[0] = "**"
+    elif p[1] == "🙃":
+        p[0] = "and"
+    elif p[1] == "🙂":
+        p[0] = "or"
     else:
         p[0] = emoji_operators[p[1]] if p[1] in emoji_operators.keys() else p[1]
 
@@ -1064,7 +1068,11 @@ def p_unary_expression(p):
     unary_expression : MINUS expression
                      | NOT expression
     """
-    p[0] = f"{p[1]}{p[2]}"
+    match p[1]:
+        case "-":
+            p[0] = f"-{p[2]}"
+        case "😡":
+            p[0] = f"not {p[2]}"
 
 
 def p_call_expression(p):

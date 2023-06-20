@@ -425,14 +425,14 @@ def p_assignment_statement(p):
         else p[1]
     )
 
-    # if not current_scope.contains_variable(variable_basename):
-    #     raise PintException(
-    #         "Assignment error", 
-    #         f"Variable \"{variable_basename}\" not defined in scope {current_scope.name}", 
-    #         p.lexer.lineno - 2, 
-    #         1, 
-    #         None
-    #     )
+    if not current_scope.contains_variable(variable_basename):
+        raise PintException(
+            "Assignment error", 
+            f"Variable \"{variable_basename}\" not defined in scope {current_scope.name}", 
+            p.lexer.lineno - 2, 
+            1, 
+            None
+        )
     
     # @TODO: compound identifiers in scope? value update? is keeping track of variable value necessary? 
     

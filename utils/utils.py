@@ -87,8 +87,11 @@ class MethodScope(Scope):
         super().__init__(name, parent)
 
     def contains_variable(self, name: str):
-        return name in self.variables
-    
+        if name in self.variables:
+            return True
+        elif self.parent is not None:
+            return name in self.parent.variables
+
 
 class Variable:
     def __init__(self, name: str, type: str, value: Any = None):

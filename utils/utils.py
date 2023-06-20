@@ -60,6 +60,36 @@ class Scope:
             return False
 
 
+class FunctionScope(Scope):
+    def __init__(self, name: str, parent: Scope = None):
+        super().__init__(name, parent)
+
+    def contains_variable(self, name: str):
+        return name in self.variables
+    
+    def contains_function(self, name: str):
+        return name in self.functions
+
+
+class ClassScope(Scope):
+    def __init__(self, name: str, parent: Scope = None):
+        super().__init__(name, parent)
+    
+    def contains_variable(self, name: str):
+        return name in self.variables
+
+    def contains_function(self, name: str):
+        return name in self.functions
+
+
+class MethodScope(Scope):
+    def __init__(self, name: str, parent: Scope = None):
+        super().__init__(name, parent)
+
+    def contains_variable(self, name: str):
+        return name in self.variables
+    
+
 class Variable:
     def __init__(self, name: str, type: str, value: Any = None):
         self.name: str = name

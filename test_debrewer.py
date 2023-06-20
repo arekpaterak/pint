@@ -27,12 +27,12 @@ class TestDebrewer(unittest.TestCase):
 
                 try:
                     self.assertEqual(expected, actual)
+                    print(f"File {filename} OK")
                 except AssertionError:
                     print(f"File {filename} failed")
                     failed = True
-
-                print(f"File {filename} OK")
-                os.remove(test_output_file)
+                finally:
+                    os.remove(test_output_file)
 
         if failed:
             self.fail("Some tests failed")

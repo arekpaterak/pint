@@ -359,7 +359,7 @@ def p_function_naming(p):
         raise PintException("Definition error", f"Function \"{p[2]}\" already defined in scope {current_scope.name}", p.lexer.lineno, 1, None)
     else:
         current_scope.functions[p[2]] = p[0] = Function(p[2], None, None, None)
-        current_scope = Scope(p[2], current_scope)
+        current_scope = FunctionScope(p[2], current_scope)
 
 
 def p_function_body(p):
@@ -425,14 +425,14 @@ def p_assignment_statement(p):
         else p[1]
     )
 
-    if not current_scope.contains_variable(variable_basename):
-        raise PintException(
-            "Assignment error", 
-            f"Variable \"{variable_basename}\" not defined in scope {current_scope.name}", 
-            p.lexer.lineno - 2, 
-            1, 
-            None
-        )
+    # if not current_scope.contains_variable(variable_basename):
+    #     raise PintException(
+    #         "Assignment error", 
+    #         f"Variable \"{variable_basename}\" not defined in scope {current_scope.name}", 
+    #         p.lexer.lineno - 2, 
+    #         1, 
+    #         None
+    #     )
     
     # @TODO: compound identifiers in scope? value update? is keeping track of variable value necessary? 
     
@@ -481,6 +481,10 @@ def p_simple_if_statement(p):
     """
     simple_if_statement : LEAF LPAREN expression RPAREN LBRACE NEWLINE if_body RBRACE NEWLINE
     """
+
+    if p[7].isspace() or not p[7]:
+        p[7] = "pass"
+
     p[0] = f"if {p[3]}:\n{indent(p[7])}\n"
 
 
@@ -514,6 +518,10 @@ def p_elseif_statement(p):
     """
     elseif_statement : LEAF LPAREN expression RPAREN LBRACE NEWLINE if_body RBRACE NEWLINE
     """
+
+    if p[7].isspace() or not p[7]:
+        p[7] = "pass"
+
     p[0] = f"elif {p[3]}:\n{indent(p[7])}\n"
 
 
@@ -521,6 +529,10 @@ def p_else_block(p):
     """
     else_block : FALLENLEAF LBRACE NEWLINE if_body RBRACE NEWLINE
     """
+
+    if p[4].isspace() or not p[4]:
+        p[4] = "pass"
+
     p[0] = f"else:\n{indent(p[4])}\n"
 
 
@@ -544,6 +556,10 @@ def p_match_case(p):
     """
     match_case : LEAF LPAREN expression RPAREN LBRACE case_body RBRACE NEWLINE
     """
+
+    if p[6].isspace() or not p[6]:
+        p[6] = "pass"
+
     p[0] = f"case {p[3]}:\n{indent(p[6])}\n"
 
 
@@ -551,6 +567,10 @@ def p_match_default(p):
     """
     match_default : FALLENLEAF LBRACE case_body RBRACE NEWLINE
     """
+
+    if p[3].isspace() or not p[3]:
+        p[3] = "pass"
+
     p[0] = f"case _:\n{indent(p[3])}\n"
 
 
@@ -582,6 +602,10 @@ def p_while_statement(p):
     global current_scope
 
     statements = p[7] if len(p) == 10 else p[4]
+
+    if statements.isspace() or not statements:
+        statements = "pass"
+
     statements = indent(statements)
 
     condition = p[3] if len(p) == 10 else "True"
@@ -610,6 +634,9 @@ def p_for_statement(p):
     global current_scope
 
     current_scope = current_scope.parent
+
+    if p[4].isspace() or not p[4]:
+        p[4] = "pass"
 
     p[0] = f"{p[1]}\n{indent(p[4])}\n"
 
@@ -795,7 +822,7 @@ def p_class_naming(p):
 
     if not p[2] in types.keys():
         types.update({p[2]: p[2]})
-        current_scope = Scope(p[2], current_scope)
+        current_scope = ClassScope(p[2], current_scope)
     else:
         raise PintException("Definition error", f"Class \"{p[2]}\" already defined", p.lexer.lineno, 1, None)
 
@@ -891,6 +918,8 @@ class Constructor:
         self.statements = statements
 
     def __str__(self):
+        if self.statements.isspace():
+            self.statements = "pass"
         return f"def __init__({self.parameters}):\n{indent(self.statements)}\n" if self.parameters else f"def __init__(self):\n{indent(self.statements)}\n"
 
 
@@ -916,7 +945,7 @@ def p_constructor_naming(p):
     """
     global current_scope
 
-    current_scope = Scope("constructor", current_scope)
+    current_scope = MethodScope("constructor", current_scope)
 
     p[0] = " ".join(p[1:])
 
@@ -947,6 +976,8 @@ class Function:
         self.body = body
 
     def __str__(self):
+        if self.body is None or self.body.isspace():
+            self.body = "pass"
         return f"def {self.name}({self.parameters}) -> {self.return_type}:\n{indent(self.body)}\n"
 
 
@@ -1003,14 +1034,14 @@ def p_method_naming(p):
             else:
                 m = Method(p[2], None, None, None)
                 current_scope.functions[p[2]] = m
-                current_scope = Scope(p[2], current_scope)
+                current_scope = MethodScope(p[2], current_scope)
         case _:
             if current_scope.contains_function(p[3]):
                 raise PintException("Definition error", f"Method \"{p[3]}\" already defined in scope {current_scope.name}", p.lexer.lineno, 1, None)
             else:
                 m = Method(p[3], None, None, None, True)
                 current_scope.functions[p[3]] = m
-                current_scope = Scope(p[3], current_scope)
+                current_scope = MethodScope(p[3], current_scope)
 
     p[0] = m
 

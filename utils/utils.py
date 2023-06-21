@@ -91,6 +91,8 @@ class MethodScope(Scope):
             return True
         elif self.parent is not None:
             return name in self.parent.variables
+        else:
+            return False
 
 
 class Variable:

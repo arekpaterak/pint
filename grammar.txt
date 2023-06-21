@@ -1,0 +1,261 @@
+program : nonexecutables imports nonexecutables definitions_and_statements nonexecutables
+
+newlines : newlines NEWLINE
+            | NEWLINE
+
+empty :
+
+imports : imports nonexecutables import
+        | import
+        | empty
+
+import : IMPORT compound_identifier NEWLINE
+        | IMPORT compound_identifier AS IDENTIFIER NEWLINE
+        | IMPORT compound_identifier FROM compound_identifier NEWLINE
+        | IMPORT compound_identifier FROM compound_identifier AS IDENTIFIER NEWLINE
+
+definitions_and_statements : definitions_and_statements nonexecutables definition
+                            | definitions_and_statements nonexecutables statement
+                            | definition
+                            | statement
+                            | empty
+
+type : TYPE
+        | IDENTIFIER
+        | LIST LEFTARROW type RIGHTARROW
+        | TUPLE LEFTARROW types RIGHTARROW
+        | DICT LEFTARROW type COMMA type RIGHTARROW
+        | SET LEFTARROW type RIGHTARROW
+
+types : types COMMA type
+        | type
+
+definition : class_definition
+            | function_definition
+            | variable_definition
+
+variable_definition : type IDENTIFIER ASSIGN expression NEWLINE
+                    | type IDENTIFIER ASSIGN expression oneline_comment
+
+function_definition : function_naming LPAREN parameters RPAREN RETURNARROW type LBRACE NEWLINE function_body RBRACE NEWLINE
+                    | function_naming LPAREN parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
+
+function_naming : FUNCTION IDENTIFIER
+
+function_body : function_body statement nonexecutables
+                | function_body variable_definition nonexecutables
+                | function_body function_definition nonexecutables
+                | nonexecutables
+                | empty
+
+statement : assignment_statement
+            | call_statement
+            | if_statement
+            | match_statement
+            | loop_statement
+            | continue_statement
+            | break_statement
+            | return_statement
+            | pass_statement
+            | NEWLINE
+
+statements : statements comments statement
+            | statement
+            | empty
+
+return_statement : RETURN expression NEWLINE
+                    | RETURN NEWLINE
+
+assignment_statement : compound_identifier assign expression NEWLINE
+                        | subscript_expression assign expression NEWLINE
+                        | compound_identifier assign expression oneline_comment
+                        | subscript_expression assign expression oneline_comment
+
+assign : ASSIGN
+        | PLUSASSIGN
+        | MINUSASSIGN
+        | TIMESASSIGN
+        | DIVIDEASSIGN
+        | MODULOASSIGN
+        | POWERASSIGN
+        | FLOORASSIGN
+
+call_statement : call NEWLINE
+
+if_statement : simple_if_statement
+                | compound_if_statement
+
+simple_if_statement : LEAF LPAREN expression RPAREN LBRACE NEWLINE if_body RBRACE NEWLINE
+
+if_body : if_body statement nonexecutables
+        | if_body variable_definition nonexecutables
+        | nonexecutables
+        | empty
+
+compound_if_statement : TREE LBRACE NEWLINE if_elseif_statements else_block RBRACE NEWLINE
+                        | TREE LBRACE NEWLINE if_elseif_statements RBRACE NEWLINE
+
+if_elseif_statements : if_elseif_statements elseif_statement
+                        | simple_if_statement
+
+elseif_statement : LEAF LPAREN expression RPAREN LBRACE NEWLINE if_body RBRACE NEWLINE
+
+else_block : FALLENLEAF LBRACE NEWLINE if_body RBRACE NEWLINE
+
+match_statement : TREE LPAREN compound_identifier RPAREN LBRACE NEWLINE match_cases match_default RBRACE NEWLINE
+
+match_cases : match_cases match_case
+            | match_case
+
+match_case : LEAF LPAREN expression RPAREN LBRACE case_body RBRACE NEWLINE
+
+match_default : FALLENLEAF LBRACE case_body RBRACE NEWLINE
+
+case_body : case_body statement nonexecutables
+            | case_body variable_definition nonexecutables
+            | nonexecutables
+            | empty
+
+loop_statement : while_statement
+                | for_statement
+
+while_statement : loop_beginning LPAREN expression RPAREN LBRACE NEWLINE statements RBRACE NEWLINE   
+                | loop_beginning LBRACE NEWLINE statements RBRACE NEWLINE
+
+loop_beginning : LOOP
+
+for_statement : for_beginning LBRACE NEWLINE definitions_and_statements RBRACE NEWLINE
+
+for_beginning : loop_beginning LPAREN type IDENTIFIER ASSIGN expression RPAREN
+
+continue_statement : CONTINUE NEWLINE
+
+break_statement : BREAK NEWLINE
+
+pass_statement : PASS NEWLINE
+
+comment : oneline_comment
+        | multiline_comment
+
+multiline_comment : MULTILINECOMMENT
+
+oneline_comment : ONELINECOMMENT
+
+comments : comments comment
+            | comment
+
+nonexecutables : nonexecutables comments
+                | nonexecutables newlines
+                | empty
+
+parameters : parameters COMMA parameter
+            | parameter
+            | empty
+
+class_parameters : parameters
+
+parameter : simple_parameter
+            | default_parameter
+
+simple_parameter : type IDENTIFIER
+
+default_parameter : type IDENTIFIER ASSIGN expression
+
+class_definition : class_naming LBRACE NEWLINE class_body RBRACE NEWLINE
+                    | class_naming INHERITS IDENTIFIER LBRACE NEWLINE class_body RBRACE NEWLINE
+
+class_naming : CLASS IDENTIFIER
+
+class_body : nonexecutables fields_declarations nonexecutables constructor_definition nonexecutables 
+methods_definitions nonexecutables
+
+fields_declarations : fields_declarations nonexecutables field_declaration
+                    | field_declaration
+                    | empty
+
+field_declaration : type IDENTIFIER NEWLINE
+                    | CLASS type IDENTIFIER NEWLINE
+
+constructor_definition : constructor_naming LPAREN class_parameters RPAREN LBRACE NEWLINE constructor_body RBRACE NEWLINE
+                        | empty
+
+constructor_naming : CONSTRUCTOR IDENTIFIER
+
+constructor_body : function_body
+                    | function_body super_init_call function_body
+
+super_init_call : INHERITS LPAREN arguments RPAREN
+
+methods_definitions : methods_definitions nonexecutables method_definition
+                    | method_definition
+                    | empty
+
+method_definition : method_naming LPAREN class_parameters RPAREN RETURNARROW type LBRACE NEWLINE function_body RBRACE NEWLINE
+                    | method_naming LPAREN class_parameters RPAREN RETURNARROW NONE LBRACE NEWLINE function_body RBRACE NEWLINE
+
+method_naming : FUNCTION IDENTIFIER
+                | CLASS FUNCTION IDENTIFIER
+
+expression : LPAREN expression RPAREN
+            | binary_expression
+            | unary_expression
+            | call_expression
+            | literal_expression
+            | identifier_expression
+            | subscript_expression
+
+binary_operator : PLUS
+                | MINUS
+                | TIMES
+                | DIVIDE
+                | MODULO
+                | POWER
+                | FLOOR
+                | EQUAL
+                | NOTEQUAL
+                | LESS
+                | GREATER
+                | LESSEQUAL
+                | GREATEREQUAL
+                | AND
+                | OR
+
+binary_expression : expression binary_operator expression
+
+unary_expression : MINUS expression
+                    | NOT expression
+
+call_expression : call
+
+call : compound_identifier LPAREN arguments RPAREN
+        | LIST LPAREN arguments RPAREN
+        | SET LPAREN arguments RPAREN
+        | TUPLE LPAREN arguments RPAREN
+        | DICT LPAREN items RPAREN
+        | PRINT LPAREN arguments RPAREN
+
+items : items COMMA item
+        | item
+        | empty
+
+item : expression COLON expression
+
+compound_identifier : compound_identifier DOT IDENTIFIER
+                    | IDENTIFIER
+                    | SELF DOT IDENTIFIER
+
+arguments : arguments COMMA expression
+            | expression
+            | empty
+
+literal_expression : literal
+
+literal : INT
+        | FLOAT
+        | STRING
+        | BOOLEAN
+        | NONE
+
+identifier_expression : compound_identifier
+
+subscript_expression : expression LBRACKET expression RBRACKET
